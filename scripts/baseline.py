@@ -54,6 +54,9 @@ def main():
     asr = pipeline("automatic-speech-recognition", model=args.model,
                    device=0 if device.startswith("cuda") else -1)
 
+    import soundfile as sf
+    import numpy as np
+
     hypotheses = {}
     t0 = time.time()
     for i, row in enumerate(rows):
@@ -61,7 +64,11 @@ def main():
         if not os.path.isabs(path):
             path = os.path.join(os.path.dirname(__file__), "..", path)
         try:
-            out = asr(path, generate_kwargs={"language": row.get("language", "english")})
+            pcm, sr = sf.read(path, dtype="float32")
+            if pcm.ndim > 1:
+                pcm = pcm.mean(axis=1)
+            out = asr({"raw": pcm, "sampling_rate": sr},
+                       generate_kwargs={"language": row.get("language", "english")})
             hypotheses[row["path"]] = out["text"]
         except Exception as e:
             print(f"  [{i+1}/{len(rows)}] ERROR {path}: {e}")
