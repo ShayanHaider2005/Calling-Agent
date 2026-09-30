@@ -1,0 +1,6 @@
+# Lightweight dependencies for CPU-only unit tests (no torch, no model downloads).
+jiwer>=3.0
+pyyaml>=6.0
+numpy>=1.24
+soundfile>=0.12
+pytest>=8.0
