@@ -16,8 +16,8 @@ Format: newest first. All state lives here (memory may be reset).
 - [x] P0b: skeleton + check_env.py (venv, requirements, .gitignore, folders)
 - [x] P1: src/eval.py + tests (9 pass), scripts/baseline.py, scripts/record_testset.py, 150 prompts, RECORDING_GUIDE.md
 - [x] P3: src/brain.py + scenarios/clinic.yaml + tests/test_brain.py (18 pass, bulk 56/56 = 100%)
-- [ ] P2: pipeline
-- [ ] P4: TTS
+- [x] P2: src/pipeline.py (text/file/mic modes, VAD, barge-in, per-stage latency log) — text + file verified end-to-end
+- [x] P4: src/tts.py (piper, all 4 languages verified) — intelligibility check pending
 - [ ] P5: latency
 - [ ] P6: training loop
 - [ ] P7: web demo

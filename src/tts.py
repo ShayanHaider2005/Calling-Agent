@@ -15,11 +15,24 @@ VOICE_DIR = os.path.join("models", "piper_voices")
 # Per-language Piper voice config: (repo path in piper-voices, quality)
 # Filled in after surveying available voices; see TTS_NOTES.md.
 PIPER_VOICES = {
-    "english": ("en_US-lessac-medium", "en/en_US/lessac/medium/en_US-lessac-medium.onnx"),
-    "spanish": ("es_ES-carlfm-x_low", "es/es_ES/carlfm/x_low/es_ES-carlfm-x_low.onnx"),
-    "hindi": ("hi_IN-prudence-medium", "hi/hi_IN/prudence/medium/hi_IN-prudence-medium.onnx"),
-    "urdu": ("ur_PK-raj-medium", "ur/ur_PK/raj/medium/ur_PK-raj-medium.onnx"),
+    "english": ("en_US-amy-medium", "en/en_US/amy/medium/en_US-amy-medium.onnx"),
+    "spanish": ("es_ES-davefx-medium", "es/es_ES/davefx/medium/es_ES-davefx-medium.onnx"),
+    "hindi": ("hi_IN-rohan-medium", "hi/hi_IN/rohan/medium/hi_IN-rohan-medium.onnx"),
+    "urdu": ("ur_PK-fasih-medium", "ur/ur_PK/fasih/medium/ur_PK-fasih-medium.onnx"),
 }
+
+
+def pcm_to_wav_bytes(pcm_bytes, sample_rate=22050, channels=1, sample_width=2):
+    """Wrap raw PCM bytes in a WAV container (returned as bytes)."""
+    import io
+    import wave
+    buf = io.BytesIO()
+    with wave.open(buf, "wb") as w:
+        w.setnchannels(channels)
+        w.setsampwidth(sample_width)
+        w.setframerate(sample_rate)
+        w.writeframes(pcm_bytes)
+    return buf.getvalue()
 
 
 def voice_onnx_path(lang):
@@ -29,21 +42,22 @@ def voice_onnx_path(lang):
 
 
 def download_voice(lang, force=False):
-    """Download a Piper voice from Hugging Face (rhasspy/piper-voices)."""
+    """Download a Piper voice (.onnx + .onnx.json) from rhasspy/piper-voices."""
+    import shutil
     from huggingface_hub import hf_hub_download
 
     if lang not in PIPER_VOICES:
         raise ValueError(f"no piper voice configured for {lang}")
     rel = PIPER_VOICES[lang][1]
     dest = os.path.join(VOICE_DIR, rel)
-    if os.path.exists(dest) and not force:
+    json_dest = dest + ".json"
+    if os.path.exists(dest) and os.path.exists(json_dest) and not force:
         return dest
     os.makedirs(os.path.dirname(dest), exist_ok=True)
-    # hf_hub_download returns the cached path; copy into our tree
-    cached = hf_hub_download(repo_id="rhasspy/piper-voices", filename=rel,
-                             repo_type="model")
-    import shutil
-    shutil.copyfile(cached, dest)
+    for suffix in ("", ".json"):
+        cached = hf_hub_download(repo_id="rhasspy/piper-voices",
+                                 filename=rel + suffix, repo_type="model")
+        shutil.copyfile(cached, dest + suffix)
     return dest
 
 
@@ -65,22 +79,16 @@ class PiperTTS:
     def synthesize(self, text):
         """Return WAV bytes (16 kHz mono) for the given text."""
         voice = self._load()
-        chunks = []
-        for audio in voice.synthesize(text):
-            chunks.append(audio)
-        if not chunks:
-            return b""
-        # piper yields bytes chunks; concatenate
-        if isinstance(chunks[0], bytes):
-            return b"".join(chunks)
-        # some versions yield objects with .bytes or are AudioChunk
-        out = b""
-        for c in chunks:
-            if hasattr(c, "bytes"):
-                out += c.bytes
-            elif isinstance(c, (bytes, bytearray)):
-                out += bytes(c)
-        return out
+        out = bytearray()
+        sample_rate = 22050  # piper default
+        for chunk in voice.synthesize(text):
+            # piper yields AudioChunk objects with audio_int16_bytes
+            if hasattr(chunk, "audio_int16_bytes"):
+                out += chunk.audio_int16_bytes
+                sample_rate = getattr(chunk, "sample_rate", sample_rate)
+            elif isinstance(chunk, (bytes, bytearray)):
+                out += bytes(chunk)
+        return pcm_to_wav_bytes(bytes(out), sample_rate)
 
 
 class SapiTTS:
