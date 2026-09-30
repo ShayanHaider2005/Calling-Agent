@@ -1,0 +1,10 @@
+# English language pack
+language: english
+# No LoRA adapter yet: use the base multilingual whisper model.
+adapter: null
+# Piper voice for English TTS.
+tts_voice: en/en_US/amy/medium/en_US-amy-medium.onnx
+# Detection hints (script regex + stopwords). Latin script -> English by default.
+detection:
+  script: null
+  stopwords: [the, is, are, please, thank, book, what, where, how, when, can]

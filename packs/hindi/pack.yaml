@@ -1,0 +1,10 @@
+# Hindi language pack (SKELETON — smoke-train only if time permits)
+language: hindi
+# No LoRA adapter yet: use the base multilingual whisper model.
+adapter: null
+# Piper voice for Hindi TTS.
+tts_voice: hi/hi_IN/rohan/medium/hi_IN-rohan-medium.onnx
+# Detection hints: Devanagari script -> Hindi.
+detection:
+  script: "[\u0900-\u097F]"
+  stopwords: [मैं, आप, क्या, है, करना, चाहता, अपॉइंटमेंट, बुक, कीमत, क्या]

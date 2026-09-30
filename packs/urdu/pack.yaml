@@ -1,0 +1,10 @@
+# Urdu language pack
+language: urdu
+# No LoRA adapter yet: use the base multilingual whisper model.
+adapter: null
+# Piper voice for Urdu TTS.
+tts_voice: ur/ur_PK/fasih/medium/ur_PK-fasih-medium.onnx
+# Detection hints: Arabic script -> Urdu.
+detection:
+  script: "[\u0600-\u06FF]"
+  stopwords: [میں, آپ, کیا, ہے, کرنا, چاہتا, ایپائنٹمنٹ, بک, قیمت, کتنی]
