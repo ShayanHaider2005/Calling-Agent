@@ -44,7 +44,7 @@ DEFAULT_CFG = {
     "max_steps_per_round": 50,
     "rounds": 4,
     "warmup_ratio": 0.1,
-    "test_metadata": "data/metadata.csv",
+    "test_metadata": "data/devset_metadata.csv",
     "train_dir": "data/train",
 }
 
@@ -91,22 +91,55 @@ def load_train_dataset(cfg):
         return ds
 
     if kind == "synthetic":
-        # generate a few clips with piper TTS; transcripts are known exactly.
+        # generate clips with piper TTS; transcripts are known exactly.
         # Self-contained: no ffmpeg, no broken paths. Resampled to 16 kHz.
+        # Covers all 3 languages + synthetic Urdu-English mixed sentences.
         from src.tts import TTS
-        sentences = [
-            "hello", "book an appointment", "what are your hours",
-            "how much does it cost", "where are you located",
-            "i want to see a doctor", "thank you", "goodbye",
-        ]
-        tts = TTS("english")
+        sentences = {
+            "english": [
+                "hello", "book an appointment", "what are your hours",
+                "how much does it cost", "where are you located",
+                "i want to see a doctor", "thank you", "goodbye",
+                "what services do you offer", "are you open on saturday",
+            ],
+            "urdu": [
+                "السلام علیکم", "میں ایپائنٹمنٹ بک کرنا چاہتا ہوں",
+                "آپ کے اوقات کار کیا ہیں", "معائنے کی قیمت کتنی ہے",
+                "آپ کی کلینک کہاں ہے", "میں ڈاکٹر سے ملنا چاہتا ہوں",
+                "شکریہ", "الوداع", "کیا آپ ہفتے کو کھلے ہیں",
+            ],
+            "hindi": [
+                "नमस्ते", "मैं अपॉइंटमेंट बुक करना चाहता हूँ",
+                "आप कब खुलते हैं", "परामर्श की कीमत क्या है",
+                "आप क्लिनिक कहाँ है", "मैं डॉक्टर से मिलना चाहता हूँ",
+                "धन्यवाद", "अलविदा", "क्या आप शनिवार खुले हैं",
+            ],
+        }
         rows = []
-        for s in sentences:
+        for lang, sents in sentences.items():
+            tts = TTS(lang)
+            for s in sents:
+                wav = tts.synthesize(s)
+                pcm, sr = _wav_to_pcm(wav)
+                if sr != 16000:
+                    pcm = _resample(pcm, sr, 16000)
+                rows.append({"audio": {"array": pcm, "sampling_rate": 16000},
+                             "text": s, "language": lang})
+        # synthetic Urdu-English mixed sentences (labelled clearly)
+        mixed = [
+            "میں appointment book کرنا چاہتا ہوں",
+            "آپ کی price کیا ہے",
+            "میرا name احمد ہے",
+            "क्या آپ Saturday کو open ہیں",
+        ]
+        tts = TTS("urdu")
+        for s in mixed:
             wav = tts.synthesize(s)
             pcm, sr = _wav_to_pcm(wav)
             if sr != 16000:
                 pcm = _resample(pcm, sr, 16000)
-            rows.append({"audio": {"array": pcm, "sampling_rate": 16000}, "text": s})
+            rows.append({"audio": {"array": pcm, "sampling_rate": 16000},
+                         "text": s, "language": "mixed"})
         return Dataset.from_list(rows)
 
     if kind == "local":
@@ -142,14 +175,15 @@ def _resample(pcm, orig_sr, target_sr):
 # ------------------------------------------------------------------ model
 
 def setup_model(cfg):
-    """Load whisper + LoRA. Returns (model, tokenizer, feature_extractor)."""
-    from transformers import (AutoModelForSpeechSeq2Seq, AutoProcessor,
-                              Seq2SeqTrainingArguments, Seq2SeqTrainer)
-    from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
+    """Load whisper + LoRA. Returns (model, processor)."""
+    import torch
+    from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor
+    from peft import LoraConfig, get_peft_model
 
     model_name = cfg["model"]
+    device = "cuda" if torch.cuda.is_available() else "cpu"
     processor = AutoProcessor.from_pretrained(model_name)
-    model = AutoModelForSpeechSeq2Seq.from_pretrained(model_name)
+    model = AutoModelForSpeechSeq2Seq.from_pretrained(model_name).to(device)
     model.config.use_cache = False
 
     # target attention projections (whisper uses q_proj/k_proj/v_proj/out_proj)
