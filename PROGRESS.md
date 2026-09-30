@@ -31,6 +31,7 @@ Format: newest first. All state lives here (memory may be reset).
     license allowlist, dataset writing
   - dry-run on local audio verified (segment -> transcribe -> filter -> CSV)
   - NO video downloads (as required)
+- [x] P9: README.md, DATA_SOURCES.md, DECISIONS.md, LICENSES.md (updated)
 
 ## Test results so far
 - tests/test_eval.py: 9 passed
