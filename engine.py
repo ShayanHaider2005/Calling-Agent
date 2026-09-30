@@ -246,7 +246,8 @@ def evaluate_wer(model, processor, cfg):
             out = model.generate(**inp)
         text = processor.batch_decode(out, skip_special_tokens=True)[0]
         hypotheses[row["path"]] = text
-    return evaluate(meta, hypotheses)
+    result = evaluate(meta, hypotheses)
+    return result["overall"], result
 
 
 # ------------------------------------------------------------------ training
