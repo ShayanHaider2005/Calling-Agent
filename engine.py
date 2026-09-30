@@ -140,6 +140,18 @@ def load_train_dataset(cfg):
                 pcm = _resample(pcm, sr, 16000)
             rows.append({"audio": {"array": pcm, "sampling_rate": 16000},
                          "text": s, "language": "mixed"})
+        # --- augmentation: add noise + 8kHz phone-quality variants ---
+        # Labelled clearly as augmented synthetic data.
+        from src.augment import augment as _augment
+        base_rows = list(rows)
+        for i, r in enumerate(base_rows):
+            pcm = r["audio"]["array"]
+            noisy = _augment(pcm, sr=16000, phone=False, noise_snr=15.0, seed=i)
+            rows.append({"audio": {"array": noisy, "sampling_rate": 16000},
+                         "text": r["text"], "language": r.get("language", "english")})
+            phone = _augment(pcm, sr=16000, phone=True, seed=i + 1000)
+            rows.append({"audio": {"array": phone, "sampling_rate": 8000},
+                         "text": r["text"], "language": r.get("language", "english")})
         return Dataset.from_list(rows)
 
     if kind == "local":
