@@ -1,0 +1,67 @@
+# Fictional demo business — "Sunrise Family Clinic" (clearly fake, invented data).
+# The brain answers ONLY from this file. Never invent facts, prices, or promises.
+name: Sunrise Family Clinic
+phone: +1-555-0142
+address: 123 Demo Street, Springfield (fictional)
+note: This is a fictional business for demonstration only.
+
+opening_hours:
+  monday: "9:00 AM - 5:00 PM"
+  tuesday: "9:00 AM - 5:00 PM"
+  wednesday: "9:00 AM - 5:00 PM"
+  thursday: "9:00 AM - 5:00 PM"
+  friday: "9:00 AM - 5:00 PM"
+  saturday: "10:00 AM - 2:00 PM"
+  sunday: "Closed"
+  public_holidays: "Closed"
+
+services:
+  - general_consultation
+  - dental_checkup
+  - blood_test
+  - vaccination
+  - physiotherapy
+  - x_ray
+
+prices:
+  general_consultation: "$50"
+  dental_checkup: "$40"
+  blood_test: "$30"
+  vaccination: "$25"
+  physiotherapy: "$60"
+  x_ray: "$80"
+
+booking:
+  # The agent collects these in order, then confirms.
+  required_fields: [name, day, time]
+  days: [monday, tuesday, wednesday, thursday, friday, saturday]
+  times: ["9:00 AM", "10:00 AM", "11:00 AM", "12:00 PM", "1:00 PM", "2:00 PM", "3:00 PM", "4:00 PM"]
+  # Saturday has shorter hours; keep it simple and allow the same slots.
+  max_days_ahead: 14
+
+# Intents the rule-based fallback and the LLM classifier must map to.
+intents:
+  - greeting
+  - ask_hours
+  - ask_price
+  - ask_services
+  - ask_location
+  - book_appointment
+  - cancel_appointment
+  - reschedule_appointment
+  - ask_human
+  - ask_identity        # "are you a human/robot?"
+  - out_of_scope        # anything not answerable from this file
+  - goodbye
+  - stop                # "stop", "stop talking"
+  - not_offered         # asks for a service the clinic does not offer
+
+# Guardrail rules (enforced by the brain, tested in tests/test_brain.py):
+guardrails:
+  - must_say_ai_and_recording_in_greeting
+  - never_claim_human
+  - answer_only_from_this_file
+  - offer_human_handoff_when_unsure
+  - follow_caller_language
+  - end_call_politely_on_request
+  - stop_speaking_on_interruption
