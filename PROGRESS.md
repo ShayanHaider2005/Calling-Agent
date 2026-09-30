@@ -26,8 +26,11 @@ Format: newest first. All state lives here (memory may be reset).
   - note: librispeech_dummy surveyed but blocked (ffmpeg + wrong file paths) -> synthetic used
 - [x] P7: scripts/web_demo.py (FastAPI localhost demo) — verified: GET / 200, POST /chat 200
   (audio -> STT -> brain -> TTS -> audio + transcript + latency)
-- [ ] P8: data intake
-- [ ] P9: docs
+- [x] P8: scripts/ingest_links.py (dry-run) + tests/test_ingest.py (6 pass)
+  - segmentation, lang detect, transcription, filtering (captions-match OR two-agree),
+    license allowlist, dataset writing
+  - dry-run on local audio verified (segment -> transcribe -> filter -> CSV)
+  - NO video downloads (as required)
 
 ## Test results so far
 - tests/test_eval.py: 9 passed
