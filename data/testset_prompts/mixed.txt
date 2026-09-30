@@ -1,0 +1,52 @@
+# Natural Urdu-English mixed test-set prompts — UNVERIFIED (to be checked by the user)
+# One sentence per line. Lines starting with # are comments.
+میں ایپائنٹمنٹ بک کرنا چاہتا ہوں۔
+آپ کی opening hours کیا ہیں؟
+کیا آپ Saturday کو کھلے ہیں؟
+consultation کی price کتنی ہے؟
+آپ کی clinic کہاں ہے؟
+کیا آپ نئے patients لیتے ہیں؟
+میں اپنا appointment change کرنا چاہتا ہوں۔
+آپ کون سی services دیتے ہیں؟
+کیا آپ کے پاس dentist ہے؟
+کیا پاس میں parking ہے؟
+میرا name احمد رضا ہے۔
+میں Monday کو صبح آنا چاہتا ہوں۔
+کیا آپ home visit کرتے ہیں؟
+آج آپ کتنے بجے تک open ہیں؟
+کیا میں doctor سے بات کر سکتا ہوں؟
+مجھے prescription درکار ہے۔
+کیا آپ insurance قبول کرتے ہیں؟
+آپ کے office تک کیسے جاؤں؟
+کیا waiting list ہے؟
+میں اپنا appointment cancel کرنا چاہتا ہوں۔
+آپ کا phone number کیا ہے؟
+کیا آپ emergency services دیتے ہیں؟
+میرے tooth میں pain ہے۔
+کیا same-day appointment ممکن ہے؟
+کیا آپ telemedicine دیتے ہیں؟
+پہلی بار آنے پر کیا bring کروں؟
+کیا آپ public holiday پر کھلے ہیں؟
+ایک appointment میں کتنی time لگتی ہے؟
+کیا آپ کے پاس female doctors ہیں؟
+میں general check-up چاہتا ہوں۔
+کیا آپ میرا appointment confirm کر سکتے ہیں؟
+blood test کی price کتنی ہے؟
+کیا آپ vaccination دیتے ہیں؟
+میں اپنی mother کی جانب سے کال کر رہا ہوں۔
+کیا میں next week book کر سکتا ہوں؟
+کیا آپ کے پاس X-ray ہے؟
+آپ کے payment options کیا ہیں؟
+کیا building wheelchair accessible ہے؟
+مجھے specialist سے ملنا ہے۔
+کیا میں اپنے medical records کا copy لے سکتا ہوں؟
+کیا آپ physiotherapy دیتے ہیں؟
+آپ کس age group کے patients دیکھتے ہیں؟
+میں human سے بات کرنا چاہتا ہوں۔
+کیا آپ repeat کر سکتے ہیں؟
+آپ کی help کا شکریہ۔
+goodbye۔
+کیا آپ robot ہیں؟
+کیا آپ مجھے discount کا promise کر سکتے ہیں؟
+مجھے اپنے account میں help چاہیے۔
+کیا آج afternoon میں کوئی slot ہے؟

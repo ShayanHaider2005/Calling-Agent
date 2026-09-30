@@ -1,0 +1,52 @@
+# English test-set prompts — UNVERIFIED (to be checked by the user)
+# One sentence per line. Lines starting with # are comments.
+Hello, I would like to book an appointment.
+What are your opening hours?
+Are you open on Saturdays?
+How much does a consultation cost?
+Where are you located?
+Do you accept walk-in patients?
+Can I reschedule my appointment?
+What services do you offer?
+Do you have a dentist on staff?
+Is parking available nearby?
+My name is John Smith.
+I would like to come in on Monday morning.
+Do you offer home visits?
+What time do you close today?
+Can I speak to a doctor?
+I need a prescription refill.
+Do you take insurance?
+How do I get to your office?
+Is there a waiting list?
+Can I cancel my appointment?
+What is your phone number?
+Do you have emergency services?
+I have a toothache.
+Can I get a same-day appointment?
+Do you offer telemedicine consultations?
+What should I bring to my first visit?
+Are you open on public holidays?
+How long is a typical appointment?
+Do you have female doctors available?
+I would like a general check-up.
+Can you confirm my appointment for me?
+What is the price of a blood test?
+Do you offer vaccination services?
+I am calling on behalf of my mother.
+Can I book for next week?
+Do you have X-ray facilities?
+What are your payment options?
+Is the building wheelchair accessible?
+I need to see a specialist.
+Can I get a copy of my medical records?
+Do you offer physiotherapy?
+What age groups do you treat?
+I would like to speak to a human.
+Can you repeat that, please?
+Thank you for your help.
+Goodbye.
+Are you a robot?
+Can you promise me a discount?
+I need help with my account.
+Do you have any available slots this afternoon?

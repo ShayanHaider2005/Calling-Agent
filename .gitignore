@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+
+# Model weights / checkpoints / datasets (never commit)
+checkpoints/
+*.pt
+*.pth
+*.bin
+*.safetensors
+*.ckpt
+*.onnx
+*.gguf
+*.ggml
+models/
+hub/
+
+# Audio files and recordings (especially the test set)
+data/testset_audio/
+*.wav
+*.mp3
+*.flac
+*.ogg
+*.m4a
+*.aac
+
+# Logs with personal data
+logs/
+*.log
+
+# Results / caches (regenerable)
+results/
+cache/
+*.tmp
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
