@@ -21,5 +21,6 @@ pyttsx3>=2.90
 # Web demo
 fastapi>=0.110
 uvicorn>=0.29
+python-multipart>=0.0.9
 # Dev
 pytest>=8.0

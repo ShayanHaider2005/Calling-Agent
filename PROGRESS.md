@@ -24,7 +24,8 @@ Format: newest first. All state lives here (memory may be reset).
   - resume: second run continues from max(round)+1 (proven)
   - STOP file: halts after current round (proven)
   - note: librispeech_dummy surveyed but blocked (ffmpeg + wrong file paths) -> synthetic used
-- [ ] P7: web demo
+- [x] P7: scripts/web_demo.py (FastAPI localhost demo) — verified: GET / 200, POST /chat 200
+  (audio -> STT -> brain -> TTS -> audio + transcript + latency)
 - [ ] P8: data intake
 - [ ] P9: docs
 
