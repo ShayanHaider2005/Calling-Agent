@@ -1,0 +1,110 @@
+# Fictional demo business — "Bistro Demo" (clearly fake, invented data).
+# Proves the business knowledge is swappable: point the brain at this file
+# instead of clinic.yaml and the agent becomes a restaurant reservation agent.
+name: Bistro Demo
+phone: +1-555-0199
+address: 456 Demo Avenue, Springfield (fictional)
+note: This is a fictional business for demonstration only.
+
+opening_hours:
+  monday: "11:00 AM - 10:00 PM"
+  tuesday: "11:00 AM - 10:00 PM"
+  wednesday: "11:00 AM - 10:00 PM"
+  thursday: "11:00 AM - 10:00 PM"
+  friday: "11:00 AM - 11:00 PM"
+  saturday: "10:00 AM - 11:00 PM"
+  sunday: "10:00 AM - 9:00 PM"
+  public_holidays: "12:00 PM - 8:00 PM"
+
+services:
+  - dine_in
+  - takeaway
+  - delivery
+  - private_events
+
+prices:
+  dine_in: "à la carte"
+  takeaway: "à la carte"
+  delivery: "$5 delivery fee"
+  private_events: "from $500"
+
+booking:
+  required_fields: [name, day, time, party_size]
+  days: [monday, tuesday, wednesday, thursday, friday, saturday, sunday]
+  times: ["11:00 AM", "12:00 PM", "1:00 PM", "5:00 PM", "6:00 PM", "7:00 PM", "8:00 PM", "9:00 PM"]
+  max_days_ahead: 30
+
+intents:
+  - greeting
+  - ask_hours
+  - ask_price
+  - ask_services
+  - ask_location
+  - book_appointment
+  - cancel_appointment
+  - reschedule_appointment
+  - ask_human
+  - ask_identity
+  - out_of_scope
+  - goodbye
+  - stop
+  - not_offered
+
+guardrails:
+  - must_say_ai_and_recording_in_greeting
+  - never_claim_human
+  - answer_only_from_this_file
+  - offer_human_handoff_when_unsure
+  - follow_caller_language
+  - end_call_politely_on_request
+  - stop_speaking_on_interruption
+
+answers:
+  greeting:
+    english: "Hello, thank you for calling Bistro Demo. This is an AI assistant, and this call may be recorded. How can I help you today?"
+    urdu: "السلام علیکم، بسٹرو ڈیمو پر کال کرنے کا شکریہ۔ یہ ایک AI اسسٹنٹ ہے اور یہ کال ریکارڈ ہو سکتی ہے۔ آج میں آپ کی کیسے مدد کر سکتا ہوں؟"
+    hindi: "नमस्ते, बिस्ट्रो डेमो पर कॉल करने के लिए धन्यवाद। यह एक AI सहायक है और यह कॉल रिकॉर्ड हो सकती है। आज मैं आपकी कैसे मदद कर सकता हूँ?"
+  ask_hours:
+    english: "We are open every day. Monday to Thursday 11 AM to 10 PM, Friday and Saturday until 11 PM, and Sunday 10 AM to 9 PM."
+    urdu: "ہم ہر دن کھلے ہیں۔ پیر تا جمعرات صبح 11 سے رات 10 بجے تک، جمعہ اور ہفتہ رات 11 بجے تک، اور اتوار صبح 10 سے رات 9 بجے تک۔"
+    hindi: "हम हर दिन खुले हैं। सोमवार से गुरुवार सुबह 11 से रात 10 बजे तक, शुक्रवार और शनिवार रात 11 बजे तक, और रविवार सुबह 10 से रात 9 बजे तक।"
+  ask_price:
+    english: "Dine-in and takeaway are à la carte, delivery has a $5 fee, and private events start from $500."
+    urdu: "ڈائن اور ٹیک اوے à la carte ہے، ڈیلیوری پر $5 فیس ہے، اور پرائیویٹ ایونٹس $500 سے شروع ہوتے ہیں۔"
+    hindi: "डाइन-इन और टेकअवे कैर्ट है, डिलीवरी पर $5 शुल्क है, और निजी कार्यक्रम $500 से शुरू होते हैं।"
+  ask_services:
+    english: "We offer dine-in, takeaway, delivery, and private events."
+    urdu: "ہم ڈائن اور ٹیک اوے، ڈیلیوری اور پرائیویٹ ایونٹس کی سہولت فراہم کرتے ہیں۔"
+    hindi: "हम डाइन-इन, टेकअवे, डिलीवरी और निजी कार्यक्रम की सुविधा प्रदान करते हैं।"
+  ask_location:
+    english: "We are located at 456 Demo Avenue, Springfield."
+    urdu: "ہم 456 ڈیمو ایوینیو، سپرنگ فیلڈ میں واقع ہیں۔"
+    hindi: "हम 456 डेमो एवेन्यू, स्प्रिंगफील्ड में स्थित हैं।"
+  ask_human:
+    english: "I understand. I can connect you to a human representative. Please hold while I transfer your call."
+    urdu: "میں سمجھتا ہوں۔ میں آپ کو کسی انسانی نمائندے سے جوڑ سکتا ہوں۔ براہ کرم کال ٹرانسفر ہونے تک انتظار کریں۔"
+    hindi: "मैं समझता हूँ। मैं आपको किसी मानव प्रतिनिधि से जोड़ सकता हूँ। कृपया कॉल ट्रांसफर होने तक प्रतीक्षा करें।"
+  ask_identity:
+    english: "I am an AI assistant, not a human. If you would like, I can connect you to a human representative."
+    urdu: "میں ایک AI اسسٹنٹ ہوں، انسان نہیں۔ اگر آپ چاہیں تو میں آپ کو کسی انسانی نمائندے سے جوڑ سکتا ہوں۔"
+    hindi: "मैं एक AI सहायक हूँ, इंसान नहीं। यदि आप चाहें तो मैं आपको किसी मानव प्रतिनिधि से जोड़ सकता हूँ।"
+  goodbye:
+    english: "Thank you for calling Bistro Demo. Goodbye!"
+    urdu: "بسٹرو ڈیمو پر کال کرنے کا شکریہ۔ الوداع!"
+    hindi: "बिस्ट्रो डेमो पर कॉल करने के लिए धन्यवाद। अलविदा!"
+  out_of_scope:
+    english: "I am not sure about that. I will pass your request to a human representative who can help. Would you like me to do that?"
+    urdu: "مجھے اس بارے میں یقین نہیں۔ میں آپ کی درخواست کسی انسانی نمائندے کو دوں گا جو مدد کر سکتا ہے۔ کیا آپ چاہتے ہیں کہ میں ایسا کروں؟"
+    hindi: "मुझे इस बारे में यकीन नहीं है। मैं आपका अनुरोध किसी मानव प्रतिनिधि को दूँगा जो मदद कर सकता है। क्या आप चाहते हैं कि मैं ऐसा करूँ?"
+  not_offered:
+    english: "I am sorry, but we do not offer that. I can pass your request to a human representative if you like."
+    urdu: "معذرت، ہم یہ نہیں دیتے۔ اگر آپ چاہیں تو میں آپ کی درخواست کسی انسانی نمائندے کو دے سکتا ہوں۔"
+    hindi: "क्षमा करें, हम यह नहीं देते। यदि आप चाहें तो मैं आपका अनुरोध किसी मानव प्रतिनिधि को दे सकता हूँ।"
+  stop:
+    english: "Okay, I will stop. Please go ahead."
+    urdu: "ٹھیک ہے، میں رک جاؤں گا۔ براہ کرم بتائیں۔"
+    hindi: "ठीक है, मैं रूक जाऊँगा। कृपया बताइए।"
+  unclear:
+    english: "Sorry, I didn't catch that. Could you please repeat?"
+    urdu: "معذرت، میں نے یہ نہیں سمجھا۔ کیا آپ براہ کرم دہرا سکتے ہیں؟"
+    hindi: "क्षमा करें, मैं यह समझा नहीं। क्या आप कृपया दोहरा सकते हैं?"

@@ -65,3 +65,55 @@ guardrails:
   - follow_caller_language
   - end_call_politely_on_request
   - stop_speaking_on_interruption
+
+# Response templates per intent per language. The brain reads these from the
+# scenario file, so swapping the scenario swaps the agent's knowledge.
+answers:
+  greeting:
+    english: "Hello, thank you for calling Sunrise Family Clinic. This is an AI assistant, and this call may be recorded. How can I help you today?"
+    urdu: "السلام علیکم، سنرے فیملی کلینک پر کال کرنے کا شکریہ۔ یہ ایک AI اسسٹنٹ ہے اور یہ کال ریکارڈ ہو سکتی ہے۔ آج میں آپ کی کیسے مدد کر سکتا ہوں؟"
+    hindi: "नमस्ते, सनराइज़ फैमिली क्लिनिक पर कॉल करने के लिए धन्यवाद। यह एक AI सहायक है और यह कॉल रिकॉर्ड हो सकती है। आज मैं आपकी कैसे मदद कर सकता हूँ?"
+  ask_hours:
+    english: "We are open Monday to Friday from 9 AM to 5 PM, and on Saturday from 10 AM to 2 PM. We are closed on Sundays and public holidays."
+    urdu: "ہم پیر تا جمعہ صبح 9 سے شام 5 بجے تک اور ہفتے کو صبح 10 سے دوپہر 2 بجے تک کھلے ہیں۔ اتوار اور عوامی چھٹیوں پر بند ہیں۔"
+    hindi: "हम सोमवार से शुक्रवार सुबह 9 से शाम 5 बजे तक और शनिवार को सुबह 10 से दोपहर 2 बजे तक खुले हैं। रविवार और सार्वजनिक छुट्टियों पर बंद हैं।"
+  ask_price:
+    english: "A general consultation is $50, a dental checkup is $40, a blood test is $30, vaccination is $25, physiotherapy is $60, and an X-ray is $80."
+    urdu: "عمومی معائنہ $50، دانتوں کا چیک اپ $40، خون کا ٹیسٹ $30، ویکسینیشن $25، فیزیوتھراپی $60 اور ایکس رے $80 ہے۔"
+    hindi: "सामान्य परामर्श $50, दाँतों की जाँच $40, खून का टेस्ट $30, टीकाकरण $25, फिजियोथेरेपी $60 और एक्स-रे $80 है।"
+  ask_services:
+    english: "We offer general consultations, dental checkups, blood tests, vaccinations, physiotherapy, and X-rays."
+    urdu: "ہم عمومی معائنہ، دانتوں کا چیک اپ، خون کے ٹیسٹ، ویکسینیشن، فیزیوتھراپی اور ایکس رے کی سہولت فراہم کرتے ہیں۔"
+    hindi: "हम सामान्य परामर्श, दाँतों की जाँच, खून के टेस्ट, टीकाकरण, फिजियोथेरेपी और एक्स-रे की सुविधा प्रदान करते हैं।"
+  ask_location:
+    english: "We are located at 123 Demo Street, Springfield. Street parking is available nearby."
+    urdu: "ہم 123 ڈیمو اسٹریٹ، سپرنگ فیلڈ میں واقع ہیں۔ پاس میں سٹریٹ پارکنگ دستیاب ہے۔"
+    hindi: "हम 123 डेमो स्ट्रीट, स्प्रिंगफील्ड में स्थित हैं। पास में स्ट्रीट पार्किंग उपलब्ध है।"
+  ask_human:
+    english: "I understand. I can connect you to a human representative. Please hold while I transfer your call."
+    urdu: "میں سمجھتا ہوں۔ میں آپ کو کسی انسانی نمائندے سے جوڑ سکتا ہوں۔ براہ کرم کال ٹرانسفر ہونے تک انتظار کریں۔"
+    hindi: "मैं समझता हूँ। मैं आपको किसी मानव प्रतिनिधि से जोड़ सकता हूँ। कृपया कॉल ट्रांसफर होने तक प्रतीक्षा करें।"
+  ask_identity:
+    english: "I am an AI assistant, not a human. If you would like, I can connect you to a human representative."
+    urdu: "میں ایک AI اسسٹنٹ ہوں، انسان نہیں۔ اگر آپ چاہیں تو میں آپ کو کسی انسانی نمائندے سے جوڑ سکتا ہوں۔"
+    hindi: "मैं एक AI सहायक हूँ, इंसान नहीं। यदि आप चाहें तो मैं आपको किसी मानव प्रतिनिधि से जोड़ सकता हूँ।"
+  goodbye:
+    english: "Thank you for calling Sunrise Family Clinic. Goodbye!"
+    urdu: "سنرے فیملی کلینک پر کال کرنے کا شکریہ۔ الوداع!"
+    hindi: "सनराइज़ फैमिली क्लिनिक पर कॉल करने के लिए धन्यवाद। अलविदा!"
+  out_of_scope:
+    english: "I am not sure about that. I will pass your request to a human representative who can help. Would you like me to do that?"
+    urdu: "مجھے اس بارے میں یقین نہیں۔ میں آپ کی درخواست کسی انسانی نمائندے کو دوں گا جو مدد کر سکتا ہے۔ کیا آپ چاہتے ہیں کہ میں ایسا کروں؟"
+    hindi: "मुझे इस बारे में यकीन नहीं है। मैं आपका अनुरोध किसी मानव प्रतिनिधि को दूँगा जो मदद कर सकता है। क्या आप चाहते हैं कि मैं ऐसा करूँ?"
+  not_offered:
+    english: "I am sorry, but we do not offer that service. I can pass your request to a human representative if you like."
+    urdu: "معذرت، ہم یہ خدمت نہیں دیتے۔ اگر آپ چاہیں تو میں آپ کی درخواست کسی انسانی نمائندے کو دے سکتا ہوں۔"
+    hindi: "क्षमा करें, हम यह सेवा नहीं देते। यदि आप चाहें तो मैं आपका अनुरोध किसी मानव प्रतिनिधि को दे सकता हूँ।"
+  stop:
+    english: "Okay, I will stop. Please go ahead."
+    urdu: "ٹھیک ہے، میں رک جاؤں گا۔ براہ کرم بتائیں۔"
+    hindi: "ठीक है, मैं रूक जाऊँगा। कृपया बताइए।"
+  unclear:
+    english: "Sorry, I didn't catch that. Could you please repeat?"
+    urdu: "معذرت، میں نے یہ نہیں سمجھا۔ کیا آپ براہ کرم دہرا سکتے ہیں؟"
+    hindi: "क्षमा करें, मैं यह समझा नहीं। क्या आप कृपया दोहरा सकते हैं?"

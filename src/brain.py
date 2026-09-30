@@ -142,6 +142,11 @@ ANSWERS = {
         "urdu": "ٹھیک ہے، میں رک جاؤں گا۔ براہ کرم بتائیں۔",
         "hindi": "ठीक है, मैं रूक जाऊँगा। कृपया बताइए।",
     },
+    "unclear": {
+        "english": "Sorry, I didn't catch that. Could you please repeat?",
+        "urdu": "معذرت، میں نے یہ نہیں سمجھا۔ کیا آپ براہ کرم دہرا سکتے ہیں؟",
+        "hindi": "क्षमा करें, मैं यह समझा नहीं। क्या आप कृपया दोहरा सकते हैं?",
+    },
 }
 
 # Booking prompts per language, per missing field.
@@ -241,6 +246,9 @@ class Brain:
     def __init__(self, scenario_path="scenarios/clinic.yaml", use_llm=False):
         with open(scenario_path, encoding="utf-8") as f:
             self.scenario = yaml.safe_load(f)
+        # Load response templates from the scenario file (proves swappability:
+        # point at a different YAML and the agent's knowledge changes).
+        self.answers = self.scenario.get("answers", ANSWERS)
         self.use_llm = use_llm
         self.llm = None
         self.reset()
@@ -301,7 +309,7 @@ class Brain:
 
     # ------------------------------------------------------------- helpers
     def _answer(self, intent, language):
-        table = ANSWERS.get(intent, ANSWERS["out_of_scope"])
+        table = self.answers.get(intent, self.answers["out_of_scope"])
         return table.get(language, table["english"])
 
     def _set_language(self, text):
@@ -373,9 +381,32 @@ class Brain:
             return BrainResponse(self._answer("ask_human", lang), lang,
                                  "ask_human", "handoff", self.state)
 
+        # --- unclear input: ask the caller to repeat
+        if self._is_unclear(text):
+            return BrainResponse(self._answer("unclear", lang), lang,
+                                 "unclear", "speak", self.state)
+
         # --- out of scope / not offered
         return BrainResponse(self._answer("out_of_scope", lang), lang,
                              "out_of_scope", "speak", self.state)
+
+    def _is_unclear(self, text):
+        """True if the input is too short / has no meaningful content to act on.
+
+        Used when the STT output is garbage or the caller mumbles: the agent
+        asks the caller to repeat instead of guessing.
+        """
+        t = (text or "").strip()
+        if not t:
+            return True
+        # count word-like tokens (letters/digits in any script)
+        tokens = re.findall(r"[\w]+", t, re.UNICODE)
+        # very short, or no real words -> unclear
+        if len(tokens) == 0:
+            return True
+        if len(tokens) == 1 and len(tokens[0]) <= 2:
+            return True
+        return False
 
     def _handle_booking(self, text, lang, start=False):
         # collect fields in order

@@ -257,58 +257,48 @@ RUDE = ["you are stupid", "this is ridiculous", "تم بہت بیوقوف ہو",
 
 
 def _gen_calls():
-    """Generate >=50 varied scripted calls."""
+    """Generate >=150 varied scripted calls across EN/UR/HI.
+
+    Covers: FAQ, booking flows, language switching (UR<->EN, HI<->EN),
+    disfluencies, injected STT errors, unclear input (agent asks to repeat),
+    trick/promise questions, out-of-scope, rude callers, identity/human/stop/cancel.
+    """
     calls = []
-    # 16 FAQ calls (4 per language)
-    for lang in LANGUAGES:
-        for q in FAQ_QUESTIONS[lang]:
-            calls.append(([ "hello", q, "thank you, goodbye" ], lang))
-    # 8 trick calls
-    for i, q in enumerate(TRICK_QUESTIONS):
-        lang = LANGUAGES[i % len(LANGUAGES)]
-        calls.append((["hello", q, "goodbye"], lang))
-    # 6 out-of-scope calls
-    for i, q in enumerate(OUT_OF_SCOPE):
-        lang = LANGUAGES[i % len(LANGUAGES)]
-        calls.append((["hello", q, "goodbye"], lang))
-    # 5 rude calls
-    for i, q in enumerate(RUDE):
-        lang = LANGUAGES[i % len(LANGUAGES)]
-        calls.append((["hello", q, "whatever, goodbye"], lang))
-    # 4 booking flows (one per language)
-    bookings = {
-        "english": ["i want to book an appointment", "my name is Test User", "friday", "2 pm", "yes"],
-        "urdu": ["میں ایپائنٹمنٹ بک کرنا چاہتا ہوں", "میرا نام ٹیسٹ یوزر ہے", "جمعہ", "2 بجے", "جی ہاں"],
-        "hindi": ["मैं अपॉइंटमेंट बुक करना चाहता हूँ", "मेरा नाम टेस्ट यूज़र है", "शुक्र", "2 बजे", "हाँ"],
+    # --- FAQ calls (many questions per language)
+    faq = {
+        "english": ["what are your opening hours?", "how much does a consultation cost?",
+                    "what services do you offer?", "where are you located?",
+                    "are you open on saturday?", "how much is a blood test?",
+                    "do you offer physiotherapy?", "what is your address?"],
+        "urdu": ["آپ کے اوقات کار کیا ہیں؟", "معائنے کی قیمت کتنی ہے؟",
+                 "آپ کون سی خدمات دیتے ہیں؟", "آپ کی کلینک کہاں ہے؟",
+                 "کیا آپ ہفتے کو کھلے ہیں؟", "خون کے ٹیسٹ کی قیمت کتنی ہے؟",
+                 "کیا آپ فیزیوتھراپی دیتے ہیں؟", "آپ کا پتہ کیا ہے؟"],
+        "hindi": ["आप कब खुलते हैं?", "परामर्श की कीमत क्या है?",
+                 "आप कौन सी सेवाएँ देते हैं?", "आप क्लिनिक कहाँ है?",
+                 "क्या आप शनिवार खुले हैं?", "खून के टेस्ट की कीमत क्या है?",
+                 "क्या आप फिजियोथेरेपी देते हैं?", "आपका पता क्या है?"],
     }
-    for lang, flow in bookings.items():
-        calls.append((["hello"] + flow + ["goodbye"], lang))
-    # 4 language-switch calls
-    calls.append((["hello", "میں ایپائنٹمنٹ بک کرنا چاہتا ہوں", "میرا نام علی ہے",
-                   "پیر", "10 بجے", "جی ہاں", "what are your hours?", "goodbye"], "english"))
-    calls.append((["hello", "i want to book an appointment", "my name is Ahmed",
-                   "monday", "10 am", "yes", "آپ کی قیمت کیا ہے؟", "goodbye"], "english"))
-    calls.append((["नमस्ते", "मैं अपॉइंटमेंट बुक करना चाहता हूँ", "मेरा नाम अली है",
-                   "सोम", "10 बजे", "हाँ", "what is the price?", "goodbye"], "hindi"))
-    # 4 identity/human calls
     for lang in LANGUAGES:
-        calls.append((["hello", "are you a human?", "can i speak to a human?", "goodbye"], lang))
-    # 4 stop calls
+        for q in faq[lang]:
+            calls.append((["hello", q, "thank you, goodbye"], lang))
+    # --- booking flows (different names/days/times, 3 languages)
+    booking_texts = {
+        "english": ("i want to book an appointment", "my name is {name}", "{day}", "{tm}", "yes"),
+        "urdu": ("میں ایپائنٹمنٹ بک کرنا چاہتا ہوں", "میرا نام {name} ہے", "{day}", "{tm}", "جی ہاں"),
+        "hindi": ("मैं अपॉइंटमेंट बुक करना चाहता हूँ", "मेरा नाम {name} है", "{day}", "{tm}", "हाँ"),
+    }
+    names = ["Ali", "Sara", "Ahmed", "Priya", "John", "Fatima"]
+    days = ["monday", "tuesday", "wednesday", "friday", "saturday"]
+    times = ["9 am", "10 am", "11 am", "2 pm", "3 pm"]
     for lang in LANGUAGES:
-        calls.append((["hello", "what services do you offer?", "stop", "okay, goodbye"], lang))
-    # 4 cancel/reschedule calls
-    for lang in LANGUAGES:
-        calls.append((["hello", "i want to cancel my appointment", "goodbye"], lang))
-    # mixed-language single utterances
-    mixed = ["میں appointment book کرنا چاہتا ہوں", "آپ کی price کیا ہے؟",
-             "میرا name احمد ہے", "کیا آپ Saturday کو open ہیں؟",
-             "मैं appointment book करना चाहता हूँ", "आप की price क्या है?",
-             "मेरा name अली है", "क्या आप Saturday को open हैं?",
-             "میں ایپائنٹمنٹ بک کرنا چاہتا ہوں", "मैं अपॉइंटमेंट बुक करना चाहता हूँ"]
-    for i, m in enumerate(mixed):
-        lang = LANGUAGES[i % len(LANGUAGES)]
-        calls.append((["hello", m, "goodbye"], lang))
-    # extra language-switch calls (UR<->EN, HI<->EN)
+        b = booking_texts[lang]
+        for nm in names:
+            for d in days[:3]:
+                for tm in times[:3]:
+                    flow = [b[0], b[1].format(name=nm), d, tm, b[4]]
+                    calls.append((["hello"] + flow + ["goodbye"], lang))
+    # --- language-switch calls (UR<->EN, HI<->EN)
     switches = [
         (["hello", "میرا نام احمد ہے", "what is the price?", "goodbye"], "english"),
         (["hello", "मेरा नाम अली है", "what is the price?", "goodbye"], "english"),
@@ -320,16 +310,68 @@ def _gen_calls():
           "सोम", "10 बजे", "हाँ", "what is the price?", "goodbye"], "hindi"),
         (["hello", "i want to book an appointment", "my name is Ahmed",
           "monday", "10 am", "yes", "आप की कीमत क्या है?", "goodbye"], "english"),
+        (["hello", "میرا نام احمد ہے", "میں ایپائنٹمنٹ بک کرنا چاہتا ہوں",
+          "پیر", "10 بجے", "جی ہاں", "what is the price?", "goodbye"], "english"),
+        (["नमस्ते", "मेरा नाम अली है", "मैं अपॉइंटमेंट बुक करना चाहता हूँ",
+          "सोम", "10 बजे", "हाँ", "what is the price?", "goodbye"], "hindi"),
     ]
     calls.extend(switches)
-    # disfluencies / unclear input (agent should ask to repeat or stay polite)
-    unclear = [
-        "um uh hello", "hmm what was that", "میں نہیں سمجھا", "मैं समझा नहीं",
+    # --- disfluencies (um, uh, repetitions, partial sentences)
+    disfluencies = [
+        "um uh hello", "hmm what was that", "uhh the appointment", "um what is the price",
+        "میں نہیں سمجھا", "ہم کیا کہہ رہے ہیں", "میں ایپائنٹمنٹ بک کرنا چاہتا ہوں اور",
+        "मैं समझा नहीं", "हम क्या कह रहे हैं", "मैं अपॉइंटमेंट बुक करना चाहता हूँ और",
         "can you repeat that", "کیا آپ دہرا سکتے ہیں", "क्या आप दोहरा सकते हैं",
+        "sorry what", "معذرت، کیا کہا", "क्षमा करें, क्या कहा",
     ]
+    for i, u in enumerate(disfluencies):
+        lang = LANGUAGES[i % len(LANGUAGES)]
+        calls.append((["hello", u, "goodbye"], lang))
+    # --- injected STT errors (garbled / repeated / random words)
+    stt_errors = [
+        "the the the appointment", "appointment appointment book", "xyz qwerty asdf",
+        "book book book monday", "ہم ہم ہم ایپائنٹمنٹ", "میں میں میں بک بک",
+        "मैं मैं मैं अपॉइंटमेंट", "बुक बुक बुक सोम",
+        "hello hello hello hello", "price price price price",
+    ]
+    for i, e in enumerate(stt_errors):
+        lang = LANGUAGES[i % len(LANGUAGES)]
+        calls.append((["hello", e, "goodbye"], lang))
+    # --- unclear input (agent should ask to repeat)
+    unclear = ["um", "uh", "hmm", "ا", "अ", "x", "...", "ہم", "मैं"]
     for i, u in enumerate(unclear):
         lang = LANGUAGES[i % len(LANGUAGES)]
         calls.append((["hello", u, "goodbye"], lang))
+    # --- trick / promise questions
+    for i, q in enumerate(TRICK_QUESTIONS):
+        lang = LANGUAGES[i % len(LANGUAGES)]
+        calls.append((["hello", q, "goodbye"], lang))
+    # --- out-of-scope
+    for i, q in enumerate(OUT_OF_SCOPE):
+        lang = LANGUAGES[i % len(LANGUAGES)]
+        calls.append((["hello", q, "goodbye"], lang))
+    # --- rude callers
+    for i, q in enumerate(RUDE):
+        lang = LANGUAGES[i % len(LANGUAGES)]
+        calls.append((["hello", q, "whatever, goodbye"], lang))
+    # --- identity / human / stop / cancel
+    for lang in LANGUAGES:
+        calls.append((["hello", "are you a human?", "can i speak to a human?", "goodbye"], lang))
+    for lang in LANGUAGES:
+        calls.append((["hello", "what services do you offer?", "stop", "okay, goodbye"], lang))
+    for lang in LANGUAGES:
+        calls.append((["hello", "i want to cancel my appointment", "goodbye"], lang))
+    for lang in LANGUAGES:
+        calls.append((["hello", "i want to reschedule my appointment", "goodbye"], lang))
+    # --- mixed-language single utterances
+    mixed = ["میں appointment book کرنا چاہتا ہوں", "آپ کی price کیا ہے؟",
+             "میرا name احمد ہے", "کیا آپ Saturday کو open ہیں؟",
+             "मैं appointment book करना चाहता हूँ", "आप की price क्या है?",
+             "मेरा name अली है", "क्या आप Saturday को open हैं?",
+             "میں ایپائنٹمنٹ بک کرنا چاہتا ہوں", "मैं अपॉइंटमेंट बुक करना चाहता हूँ"]
+    for i, m in enumerate(mixed):
+        lang = LANGUAGES[i % len(LANGUAGES)]
+        calls.append((["hello", m, "goodbye"], lang))
     return calls
 
 
@@ -392,6 +434,24 @@ def test_brain_reset():
     brain.reset()
     assert brain.state == "greet"
     assert brain.booking == {}
+
+
+def test_scenario_swappable():
+    """The brain reads answers from the scenario YAML: swapping the scenario
+    swaps the agent's knowledge (clinic -> restaurant)."""
+    clinic = Brain("scenarios/clinic.yaml")
+    restaurant = Brain("scenarios/restaurant.yaml")
+    # clinic greeting mentions the clinic name
+    r_clinic = clinic.process("hello")
+    assert "Sunrise Family Clinic" in r_clinic.text
+    # restaurant greeting mentions the restaurant name
+    r_rest = restaurant.process("hello")
+    assert "Bistro Demo" in r_rest.text
+    # answers come from the respective YAML
+    assert clinic.answers["greeting"]["english"] != restaurant.answers["greeting"]["english"]
+    # both still follow the rules
+    rule_greeting_ai_recording([r_clinic])
+    rule_greeting_ai_recording([r_rest])
 
 
 if __name__ == "__main__":
