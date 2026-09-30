@@ -1,71 +1,57 @@
-# PLAN — Calling-Agent overnight build
+# PLAN — Calling-Agent session 2
 
-Goal: multilingual (EN/UR/HI/ES) speech-to-speech phone-call agent, chained pipeline:
-EARS (Whisper STT) -> BRAIN (small LLM + state machine) -> MOUTH (TTS) -> CALL HANDLING (VAD, barge-in, language following, latency).
+Goal: multilingual (English / Urdu / Hindi) speech-to-speech phone-call agent.
+**Three languages only — Spanish is removed.** Chained pipeline:
+EARS (Whisper STT) -> BRAIN (small LM + state machine) -> MOUTH (TTS) -> CALL HANDLING (VAD, barge-in, language following, latency).
 
-Hardware reality (measured): NVIDIA MX330, **2048 MiB VRAM** (task said 4GB; plan for 2GB), driver 581.42, CUDA 13.0. Python 3.12.10 via `py` launcher. $0 budget.
+Hardware (measured): NVIDIA MX330 **2048 MiB VRAM** (task says 4GB; plan for 2GB), 7.8GB RAM (~1.5GB free), Python 3.12.10 via `py`. $0 budget.
 
 ## Task list (priority order, timeboxed)
 
-- [ ] **P0. Git + skeleton** (~60 min) — DONE FIRST
-  - git init/remote/branch overnight-build (remote already had README; preserved)
-  - folders: configs/ src/ scenarios/ tests/ scripts/ data/ checkpoints/
-  - requirements.txt, .gitignore, scripts/check_env.py
-  - First commit + first push
-  - Acceptance: `py scripts/check_env.py` runs; branch pushed; no file >50MB staged.
+- [ ] **Q0. Orientation + repair** (~60 min)
+  - Remove Spanish from all code/tests/docs (test sentences, simulated callers, TTS survey, config)
+  - Run all tests; fix anything broken
+  - Solve session-1 gaps that fit the constraints
+  - Acceptance: 3 languages only; all tests pass.
 
-- [ ] **P1. Ears evaluation + test-set tool** (~90 min)
-  - src/eval.py: WER (jiwer) per language + per mix from metadata.csv, per-language normalization (Urdu/Hindi specifics), unit tests
-  - scripts/baseline.py: run off-the-shelf small STT on test set -> baseline_results.json
-  - scripts/record_testset.py: terminal tool, one sentence at a time, mic record on keypress (16kHz mono wav), redo/skip, appends metadata.csv
-  - data/testset_prompts/: ~150 sentences (Urdu script, English, natural UR-EN mixed), marked UNVERIFIED
-  - RECORDING_GUIDE.md
-  - Acceptance: eval unit tests pass; baseline runs on at least a few clips; record tool records one clip.
+- [ ] **Q1. Test data check** (~60 min)
+  - Look for `data/testset` (metadata.csv + audio). If a verified set exists, use it; run baseline.py if baseline_results.json missing.
+  - If NOT: use a small public dev split clearly labelled "public dev set, not my test set" as a temporary stand-in. Never train on it.
+  - Acceptance: a labelled dev set exists; baseline runs if real test set present.
 
-- [ ] **P2. End-to-end pipeline** (~90 min)
-  - src/pipeline.py: audio in -> VAD -> STT -> lang detect -> brain -> TTS -> audio out
-  - mic + file/text input; barge-in; end-of-speech; per-stage latency log
-  - Acceptance: text-mode and file-audio-mode runs end to end; latency log written.
+- [ ] **Q2. Real training run** (~5 h, background)
+  - `python engine.py night` in background.
+  - Data: public permissively-licensed speech (no login) + augmentation (noise, 8kHz phone sim) + synthetic mixed-language (labelled).
+  - Monitor ~every 30 min; respect STOP; rollback if worse; save best. CPU work only while GPU busy.
+  - Acceptance: training runs; score progression logged.
 
-- [ ] **P3. Brain + guardrails** (~90 min)
-  - src/brain.py: state machine (greet, intent, FAQ, booking: name/day/time, confirm, handoff, end); LLM only for intent classification + light rephrase of approved answers; rule-based fallback with no LLM
-  - scenarios/clinic.yaml (fictional, clearly fake)
-  - tests/test_brain.py: simulated callers (interested, price, booking, lang switch UR<->EN, HI, ES, "are you human?", out-of-scope, not-offered, rude, "stop", trick/promise). >=50 simulated calls, report pass rate + failures.
-  - Acceptance: all rule tests pass; >=50 calls simulated; pass rate reported.
+- [ ] **Q3. Language packs** (~90 min)
+  - Per-language adapter loading + language-detection routing.
+  - `scripts/release_gate.py`: a new pack must improve its own language on test/dev AND not regress others beyond tolerance.
+  - Hindi pack skeleton; smoke-train only if time.
+  - Acceptance: release_gate.py works; Hindi pack skeleton exists.
 
-- [ ] **P4. Mouth (TTS)** (~90 min)
-  - Survey free TTS for EN/UR/HI/ES; LICENSES.md with license + commercial-use status
-  - src/tts.py: common interface, per-language voice config, CPU
-  - Intelligibility check: synth test sentences -> STT back -> WER -> tts_check.json; TTS_NOTES.md
-  - Acceptance: tts.py synthesizes all 4 languages; tts_check.json written; TTS_NOTES.md honest.
+- [ ] **Q4. Brain** (~90 min)
+  - Fix session-1 simulated-call failures.
+  - Expand to 150 simulated calls: UR-EN and HI-EN switching, disfluencies, injected STT errors, unclear input (agent asks to repeat).
+  - Second demo scenario (restaurant reservations) to prove business data is swappable.
+  - Report pass rate + all failures.
 
-- [ ] **P5. Latency + resources** (~60 min)
-  - scripts/benchmark.py: per-stage timing, end-to-end delay, peak VRAM/RAM
-  - LATENCY_REPORT.md with honest numbers
-  - Acceptance: benchmark runs; report written with real measured numbers.
+- [ ] **Q5. Latency** (~60 min)
+  - Optimize: faster inference engine (if license allows), quantization, warm-up, sentence-level TTS streaming.
+  - Report before/after honestly.
 
-- [ ] **P6. Overnight training loop** (~90 min)
-  - engine.py: `python engine.py night --hours N` — LoRA fine-tune small STT in time-budgeted rounds, checkpoints, eval per round, keep best, CSV log, rollback if worse, resume after interruption; STOP-file kill switch
-  - Resume proof: test kills tiny run midway, restarts
-  - Smoke test <200 short clips (permissive public dataset if no-login, else synthetic)
-  - Acceptance: engine runs a tiny round; resume test passes; smoke eval produces scores.
+- [ ] **Q6. Video-link data intake** — only if links.txt has allowlisted (CC/public-domain) entries; else skip.
 
-- [ ] **P7. Local web demo** (~60 min)
-  - localhost-only page: click to talk, hear reply, see transcript + latency
-  - Acceptance: page serves; mic capture works in browser; audio plays back.
-
-- [ ] **P8. Data intake dry-run** (~60 min)
-  - scripts/ingest_links.py: links.txt -> segmentation, lang detect, transcription, filtering (captions match audio OR two outputs agree), dataset writing, license allowlist. NO video downloads tonight. Test on local sample audio only; unit-test filtering.
-  - Acceptance: unit tests pass on synthetic segments; dry-run on local audio works.
-
-- [ ] **P9. Docs** (~60 min)
-  - README.md (install, record test set, run baseline, run agent, run overnight loop), DATA_SOURCES.md, DECISIONS.md
-  - Acceptance: README commands all work.
+- [ ] **Q7. Docs + CI** (~60 min)
+  - Rewrite README (first person, Mermaid diagram, honest status, real results table, limitations, responsible use, roadmap).
+  - GitHub Actions workflow: CPU-only unit tests (no model downloads, no cost).
 
 ## Final 30 min
-- Final push of overnight-build; MORNING_REPORT.md (done/not done, push status + branch, assumptions, test results, TTS notes, latency/VRAM, license flags, problems, first 3 commands).
+- Final push; MORNING_REPORT_2.md (done/not done, push status, test set vs stand-in, score progression, pass rate + failures, latency before/after, license flags, problems, next 3 commands).
 
 ## Rules
-- Never commit/push main; never force-push; no file >50MB; no secrets/recordings in git.
+- Work on the current development branch; do NOT create new branches (per user instruction).
+- Never commit/push to main/master; never force-push; no file >50MB; no secrets/recordings in git.
 - Log blockers in PROGRESS.md under BLOCKED after 3 failed attempts / 20 min.
 - Never claim untested results.

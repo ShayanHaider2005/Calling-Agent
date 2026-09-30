@@ -16,7 +16,6 @@ VOICE_DIR = os.path.join("models", "piper_voices")
 # Filled in after surveying available voices; see TTS_NOTES.md.
 PIPER_VOICES = {
     "english": ("en_US-amy-medium", "en/en_US/amy/medium/en_US-amy-medium.onnx"),
-    "spanish": ("es_ES-davefx-medium", "es/es_ES/davefx/medium/es_ES-davefx-medium.onnx"),
     "hindi": ("hi_IN-rohan-medium", "hi/hi_IN/rohan/medium/hi_IN-rohan-medium.onnx"),
     "urdu": ("ur_PK-fasih-medium", "ur/ur_PK/fasih/medium/ur_PK-fasih-medium.onnx"),
 }

@@ -14,7 +14,6 @@ but it is a useful relative proxy. Full results in `results/tts_check.json`.
 | Language | Voice | Round-trip WER | Verdict |
 |---|---|---|---|
 | English | en_US-amy-medium | 0.20 | Acceptable (the 0.20 is mostly "9 AM" vs "9am" casing, not intelligibility) |
-| Spanish | es_ES-davefx-medium | 0.48 | Understandable but weak; needs native-speaker listening test |
 | Urdu | ur_PK-fasih-medium | 0.78 | Weak; STT transcribes it as garbled Urdu |
 | Hindi | hi_IN-rohan-medium | 1.00 | Poor; STT hears romanized garbage, not Devanagari speech |
 
@@ -32,7 +31,6 @@ but it is a useful relative proxy. Full results in `results/tts_check.json`.
 - **Hindi**: the "rohan" voice scores WER 1.0 — the STT hears English-like sounds.
   Try pratham/priyamvada voices and listen. If all Hindi voices are weak, Hindi TTS is
   **DEMO-ONLY** until a better voice is found.
-- **Spanish**: "davefx" is a male voice; check if it sounds natural.
 
 ## Fallback
 
@@ -42,6 +40,5 @@ non-English voices may not be installed). It is the fallback if Piper fails.
 ## Recommendation
 
 - English: good to use.
-- Spanish: usable for demo, verify with a native speaker.
 - Urdu/Hindi: weak — flag as needing better voices before any real use. Do not mark
   commercially usable until a native speaker confirms intelligibility.

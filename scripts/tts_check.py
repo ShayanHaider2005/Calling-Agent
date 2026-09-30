@@ -38,12 +38,6 @@ TEST_SENTENCES = {
         "सामान्य परामर्श की कीमत 50 डॉलर है।",
         "मैं आपको किसी मानव प्रतिनिधि से जोड़ सकता हूँ।",
     ],
-    "spanish": [
-        "Hola, gracias por llamar a la Clínica Familiar Sunrise.",
-        "Estamos abiertos de lunes a viernes de 9 a.m. a 5 p.m.",
-        "Una consulta general cuesta $50.",
-        "Puedo conectarle con un representante humano.",
-    ],
 }
 
 

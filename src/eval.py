@@ -2,7 +2,7 @@
 
 Reads metadata.csv with columns: path, language, text, is_mixed
   - path:     wav file path (relative to project root or absolute)
-  - language: english | urdu | hindi | spanish
+  - language: english | urdu | hindi
   - text:     reference transcript
   - is_mixed: 1 if the utterance mixes languages, else 0
 
@@ -75,9 +75,6 @@ def normalize_text(text, language):
     elif lang == "hindi":
         text = "".join(_HINDI_VARIANTS.get(ch, ch) for ch in text)
         text = _PUNCT_DEV.sub(" ", text)
-    elif lang == "spanish":
-        text = text.lower()
-        text = _PUNCT.sub(" ", text)
     else:  # english and fallback
         text = text.lower()
         text = _PUNCT.sub(" ", text)

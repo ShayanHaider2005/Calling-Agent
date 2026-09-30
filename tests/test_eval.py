@@ -26,11 +26,6 @@ def test_hindi_normalization():
     assert normalize_text("नमस्ते, दुनिया!", "hindi") == "नमस्ते दुनिया"
 
 
-def test_spanish_normalization():
-    assert normalize_text("¡Hola, mundo!", "spanish") == "hola mundo"
-    assert normalize_text("¿Cómo estás?", "spanish") == "cómo estás"
-
-
 def test_compute_wer_perfect():
     wer, det = compute_wer(["hello world"], ["hello world"])
     assert wer == 0.0

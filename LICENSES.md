@@ -22,7 +22,7 @@ Prefer commercially usable licenses. Non-commercial-only components are marked *
 | Component | License | Commercial use | Notes |
 |---|---|---|---|
 | piper-tts (Rhasspy Piper) | MIT | Yes | Local CPU TTS engine. |
-| piper voices (rhasspy/piper-voices) | MIT / CC0 (per voice) | Yes | en_US-amy, es_ES-davefx, hi_IN-rohan, ur_PK-fasih. Verify per-voice. |
+| piper voices (rhasspy/piper-voices) | MIT / CC0 (per voice) | Yes | en_US-amy, hi_IN-rohan, ur_PK-fasih. Verify per-voice. |
 | pyttsx3 (SAPI5 system voices) | Depends on installed OS voices | Check per voice | Fallback only. |
 | Coqui TTS | MPL-2.0 (some models NC) | Mixed | **NOT USED** — no Windows wheels; surveyed only. |
 

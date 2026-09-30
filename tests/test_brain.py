@@ -88,7 +88,7 @@ def rule_ends_politely(responses):
     last = responses[-1]
     check(last.action == "end", f"call did not end (action={last.action})")
     check(any(w in last.text.lower() for w in
-              ["goodbye", "adios", "adiós", "الوداع", "अलविदा", "बाय"]),
+              ["goodbye", "الوداع", "अलविदा", "बाय"]),
           f"no polite goodbye: {last.text!r}")
 
 
@@ -172,15 +172,6 @@ def test_hindi_caller():
     rule_ends_politely(resp)
 
 
-def test_spanish_caller():
-    utt = ["hola", "¿cuánto cuesta una consulta?", "gracias, adiós"]
-    brain, resp = simulate(utt, lang="spanish")
-    rule_greeting_ai_recording(resp)
-    rule_follows_language(utt, resp)
-    check(all(r.language == "spanish" for r in resp), "spanish caller not answered in spanish")
-    rule_ends_politely(resp)
-
-
 def test_are_you_human():
     utt = ["hello", "are you a human?", "are you a robot?", "goodbye"]
     brain, resp = simulate(utt)
@@ -249,7 +240,7 @@ def test_cancel_offers_human():
 
 # ------------------------------------------------------------------ bulk simulation
 
-LANGUAGES = ["english", "urdu", "hindi", "spanish"]
+LANGUAGES = ["english", "urdu", "hindi"]
 FAQ_QUESTIONS = {
     "english": ["what are your opening hours?", "how much does a consultation cost?",
                 "what services do you offer?", "where are you located?"],
@@ -257,15 +248,12 @@ FAQ_QUESTIONS = {
              "آپ کون سی خدمات دیتے ہیں؟", "آپ کی کلینک کہاں ہے؟"],
     "hindi": ["आप कब खुलते हैं?", "परामर्श की कीमत क्या है?",
              "आप कौन सी सेवाएँ देते हैं?", "आप क्लिनिक कहाँ है?"],
-    "spanish": ["¿cuál es su horario?", "¿cuánto cuesta una consulta?",
-                "¿qué servicios ofrecen?", "¿dónde están ubicados?"],
 }
 TRICK_QUESTIONS = ["can you promise me a discount?", "can you guarantee a free visit?",
-                   "کیا آپ مجھے رعایت کا وعدہ کر سکتے ہیں?", "क्या आप मुझे मुफ्त विज़िट की गारंटी दे सकते हैं?",
-                   "¿puede prometerme un descuento?", "¿garantiza una visita gratis?"]
+                   "کیا آپ مجھے رعایت کا وعدہ کر سکتے ہیں?", "क्या आप मुझे मुफ्त विज़िट की गारंटी दे सकते हैं?"]
 OUT_OF_SCOPE = ["what is the weather today?", "do you sell pizza?", "آج موسم کیسا ہے؟",
-                "क्या आप पिज़्ज़ा बेचते हैं?", "¿venden pizza?"]
-RUDE = ["you are stupid", "this is ridiculous", "تم بہت بیوقوف ہو", "यह बेवकूफी है", "eres tonto"]
+                "क्या आप पिज़्ज़ा बेचते हैं?"]
+RUDE = ["you are stupid", "this is ridiculous", "تم بہت بیوقوف ہو", "यह बेवकूफी है"]
 
 
 def _gen_calls():
@@ -292,7 +280,6 @@ def _gen_calls():
         "english": ["i want to book an appointment", "my name is Test User", "friday", "2 pm", "yes"],
         "urdu": ["میں ایپائنٹمنٹ بک کرنا چاہتا ہوں", "میرا نام ٹیسٹ یوزر ہے", "جمعہ", "2 بجے", "جی ہاں"],
         "hindi": ["मैं अपॉइंटमेंट बुक करना चाहता हूँ", "मेरा नाम टेस्ट यूज़र है", "शुक्र", "2 बजे", "हाँ"],
-        "spanish": ["quiero reservar una cita", "mi nombre es Test User", "viernes", "2 pm", "sí"],
     }
     for lang, flow in bookings.items():
         calls.append((["hello"] + flow + ["goodbye"], lang))
@@ -303,8 +290,6 @@ def _gen_calls():
                    "monday", "10 am", "yes", "آپ کی قیمت کیا ہے؟", "goodbye"], "english"))
     calls.append((["नमस्ते", "मैं अपॉइंटमेंट बुक करना चाहता हूँ", "मेरा नाम अली है",
                    "सोम", "10 बजे", "हाँ", "what is the price?", "goodbye"], "hindi"))
-    calls.append((["hola", "quiero reservar una cita", "mi nombre es Ahmed",
-                   "lunes", "10 am", "sí", "what is the price?", "goodbye"], "spanish"))
     # 4 identity/human calls
     for lang in LANGUAGES:
         calls.append((["hello", "are you a human?", "can i speak to a human?", "goodbye"], lang))
@@ -314,12 +299,37 @@ def _gen_calls():
     # 4 cancel/reschedule calls
     for lang in LANGUAGES:
         calls.append((["hello", "i want to cancel my appointment", "goodbye"], lang))
-    # 4 mixed-language single utterances
+    # mixed-language single utterances
     mixed = ["میں appointment book کرنا چاہتا ہوں", "آپ کی price کیا ہے؟",
-             "میرا name احمد ہے", "کیا آپ Saturday کو open ہیں؟"]
+             "میرا name احمد ہے", "کیا آپ Saturday کو open ہیں؟",
+             "मैं appointment book करना चाहता हूँ", "आप की price क्या है?",
+             "मेरा name अली है", "क्या आप Saturday को open हैं?",
+             "میں ایپائنٹمنٹ بک کرنا چاہتا ہوں", "मैं अपॉइंटमेंट बुक करना चाहता हूँ"]
     for i, m in enumerate(mixed):
         lang = LANGUAGES[i % len(LANGUAGES)]
         calls.append((["hello", m, "goodbye"], lang))
+    # extra language-switch calls (UR<->EN, HI<->EN)
+    switches = [
+        (["hello", "میرا نام احمد ہے", "what is the price?", "goodbye"], "english"),
+        (["hello", "मेरा नाम अली है", "what is the price?", "goodbye"], "english"),
+        (["hello", "میں ایپائنٹمنٹ بک کرنا چاہتا ہوں", "my name is Ahmed",
+          "monday", "10 am", "yes", "what are your hours?", "goodbye"], "english"),
+        (["hello", "i want to book an appointment", "my name is Ahmed",
+          "monday", "10 am", "yes", "آپ کی قیمت کیا ہے؟", "goodbye"], "english"),
+        (["नमस्ते", "मैं अपॉइंटमेंट बुक करना चाहता हूँ", "मेरा नाम अली है",
+          "सोम", "10 बजे", "हाँ", "what is the price?", "goodbye"], "hindi"),
+        (["hello", "i want to book an appointment", "my name is Ahmed",
+          "monday", "10 am", "yes", "आप की कीमत क्या है?", "goodbye"], "english"),
+    ]
+    calls.extend(switches)
+    # disfluencies / unclear input (agent should ask to repeat or stay polite)
+    unclear = [
+        "um uh hello", "hmm what was that", "میں نہیں سمجھا", "मैं समझा नहीं",
+        "can you repeat that", "کیا آپ دہرا سکتے ہیں", "क्या आप दोहरा सकते हैं",
+    ]
+    for i, u in enumerate(unclear):
+        lang = LANGUAGES[i % len(LANGUAGES)]
+        calls.append((["hello", u, "goodbye"], lang))
     return calls
 
 
@@ -360,7 +370,6 @@ def test_bulk_simulation():
 def test_detect_language():
     assert detect_language("میرا نام احمد ہے") == "urdu"
     assert detect_language("नमस्ते दुनिया") == "hindi"
-    assert detect_language("hola como estas") == "spanish"
     assert detect_language("hello world") == "english"
 
 

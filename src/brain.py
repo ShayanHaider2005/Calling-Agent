@@ -15,11 +15,6 @@ import yaml
 
 URDU_SCRIPT = re.compile(r"[\u0600-\u06FF]")
 DEVANAGARI = re.compile(r"[\u0900-\u097F]")
-SPANISH_WORDS = {"el", "la", "los", "las", "un", "una", "por", "favor", "gracias",
-                 "cita", "horario", "precio", "dónde", "donde", "qué", "que",
-                 "cuánto", "cuanto", "está", "esta", "abierto", "reservar",
-                 "doctor", "médico", "medico", "teléfono", "telefono", "hola",
-                 "buenos", "días", "dias", "tarde", "necesito", "quiero", "puedo"}
 ENGLISH_WORDS = {"the", "is", "are", "please", "thank", "book", "appointment",
                  "what", "where", "how", "when", "can", "could", "would", "i",
                  "you", "your", "open", "close", "hours", "price", "cost",
@@ -28,10 +23,10 @@ ENGLISH_WORDS = {"the", "is", "are", "please", "thank", "book", "appointment",
 
 
 def detect_language(text):
-    """Return 'urdu', 'hindi', 'spanish', or 'english'.
+    """Return 'urdu', 'hindi', or 'english'.
 
-    Script is decisive for Urdu/Hindi. For Latin script, count stopwords;
-    ties go to English (the demo's default).
+    Script is decisive for Urdu/Hindi. Latin-script text defaults to English
+    (the demo's default language).
     """
     if not text:
         return "english"
@@ -39,11 +34,6 @@ def detect_language(text):
         return "urdu"
     if DEVANAGARI.search(text):
         return "hindi"
-    words = set(re.findall(r"[a-záéíóúñü]+", text.lower()))
-    es = len(words & SPANISH_WORDS)
-    en = len(words & ENGLISH_WORDS)
-    if es > en:
-        return "spanish"
     return "english"
 
 
@@ -61,26 +51,25 @@ def dominant_language(texts):
 # ------------------------------------------------------------------ intents
 
 INTENT_KEYWORDS = {
-    "greeting": ["hello", "hi", "salam", "salaam", "adaab", "namaste", "hola",
-                 "buenos", "good morning", "good afternoon"],
+    "greeting": ["hello", "hi", "salam", "salaam", "adaab", "namaste",
+                 "good morning", "good afternoon"],
     "ask_hours": ["hour", "open", "close", "time", "when", "timing", "اوقات",
-                  "کھلا", "کب", "horario", "abierto", "cerrado", "खुला", "समय"],
+                  "کھلا", "کب", "खुला", "समय"],
     "ask_price": ["price", "cost", "fee", "charge", "how much", "قیمت", "کتنی",
-                  "kitna", "kitni", "precio", "cuánto", "costo", "कीमत"],
+                  "kitna", "kitni", "कीमत"],
     "ask_services": ["service", "offer", "treatment", "treat", "خدمات", "کون سی",
-                     "servicio", "सेवा"],
+                     "सेवा"],
     "ask_location": ["where", "location", "address", "located", "کہاں", "پتہ",
-                     "donde", "dirección", "कहां", "पता"],
+                     "कहां", "पता"],
     "book_appointment": ["book", "appointment", "schedule", "visit", "ایپائنٹمنٹ",
-                        "بک", "appointment", "cita", "reservar", "अपॉइंटमेंट", "बुक"],
-    "cancel_appointment": ["cancel", "منسوخ", "cancelar", "रद्द"],
-    "reschedule_appointment": ["reschedule", "change", "move", "تبدیل", "cambiar",
-                               "बदल"],
+                        "بک", "appointment", "अपॉइंटमेंट", "बुक"],
+    "cancel_appointment": ["cancel", "منسوخ", "रद्द"],
+    "reschedule_appointment": ["reschedule", "change", "move", "تبدیل", "बदल"],
     "ask_human": ["human", "person", "real", "agent", "someone", "انسان", "شخص",
-                  "persona", "इंसान", "मनुष्य"],
+                  "इंसान", "मनुष्य"],
     "ask_identity": ["robot", "ai", "artificial", "machine", "computer", "روبوٹ",
-                     "مشین", "robot", "máquina", "रोबोट", "मशीन"],
-    "goodbye": ["goodbye", "bye", "alwida", "الوداع", "adios", "अलविदा", "बाय"],
+                     "مشین", "रोबोट", "मशीन"],
+    "goodbye": ["goodbye", "bye", "alwida", "الوداع", "अलविदा", "बाय"],
     "stop": ["stop", "stop talking", "ruk", "رکو", "stop it"],
 }
 
@@ -102,67 +91,56 @@ ANSWERS = {
         "english": "Hello, thank you for calling Sunrise Family Clinic. This is an AI assistant, and this call may be recorded. How can I help you today?",
         "urdu": "السلام علیکم، سنرے فیملی کلینک پر کال کرنے کا شکریہ۔ یہ ایک AI اسسٹنٹ ہے اور یہ کال ریکارڈ ہو سکتی ہے۔ آج میں آپ کی کیسے مدد کر سکتا ہوں؟",
         "hindi": "नमस्ते, सनराइज़ फैमिली क्लिनिक पर कॉल करने के लिए धन्यवाद। यह एक AI सहायक है और यह कॉल रिकॉर्ड हो सकती है। आज मैं आपकी कैसे मदद कर सकता हूँ?",
-        "spanish": "Hola, gracias por llamar a la Clínica Familiar Sunrise. Este es un asistente de IA y esta llamada puede ser grabada. ¿Cómo puedo ayudarle hoy?",
     },
     "ask_hours": {
         "english": "We are open Monday to Friday from 9 AM to 5 PM, and on Saturday from 10 AM to 2 PM. We are closed on Sundays and public holidays.",
         "urdu": "ہم پیر تا جمعہ صبح 9 سے شام 5 بجے تک اور ہفتے کو صبح 10 سے دوپہر 2 بجے تک کھلے ہیں۔ اتوار اور عوامی چھٹیوں پر بند ہیں۔",
         "hindi": "हम सोमवार से शुक्रवार सुबह 9 से शाम 5 बजे तक और शनिवार को सुबह 10 से दोपहर 2 बजे तक खुले हैं। रविवार और सार्वजनिक छुट्टियों पर बंद हैं।",
-        "spanish": "Estamos abiertos de lunes a viernes de 9 a.m. a 5 p.m., y los sábados de 10 a.m. a 2 p.m. Cerramos los domingos y días festivos.",
     },
     "ask_price": {
         "english": "A general consultation is $50, a dental checkup is $40, a blood test is $30, vaccination is $25, physiotherapy is $60, and an X-ray is $80.",
         "urdu": "عمومی معائنہ $50، دانتوں کا چیک اپ $40، خون کا ٹیسٹ $30، ویکسینیشن $25، فیزیوتھراپی $60 اور ایکس رے $80 ہے۔",
         "hindi": "सामान्य परामर्श $50, दाँतों की जाँच $40, खून का टेस्ट $30, टीकाकरण $25, फिजियोथेरेपी $60 और एक्स-रे $80 है।",
-        "spanish": "Una consulta general cuesta $50, una revisión dental $40, un análisis de sangre $30, la vacunación $25, fisioterapia $60 y una radiografía $80.",
     },
     "ask_services": {
         "english": "We offer general consultations, dental checkups, blood tests, vaccinations, physiotherapy, and X-rays.",
         "urdu": "ہم عمومی معائنہ، دانتوں کا چیک اپ، خون کے ٹیسٹ، ویکسینیشن، فیزیوتھراپی اور ایکس رے کی سہولت فراہم کرتے ہیں۔",
         "hindi": "हम सामान्य परामर्श, दाँतों की जाँच, खून के टेस्ट, टीकाकरण, फिजियोथेरेपी और एक्स-रे की सुविधा प्रदान करते हैं।",
-        "spanish": "Ofrecemos consultas generales, revisiones dentales, análisis de sangre, vacunación, fisioterapia y radiografías.",
     },
     "ask_location": {
         "english": "We are located at 123 Demo Street, Springfield. Street parking is available nearby.",
         "urdu": "ہم 123 ڈیمو اسٹریٹ، سپرنگ فیلڈ میں واقع ہیں۔ پاس میں سٹریٹ پارکنگ دستیاب ہے۔",
         "hindi": "हम 123 डेमो स्ट्रीट, स्प्रिंगफील्ड में स्थित हैं। पास में स्ट्रीट पार्किंग उपलब्ध है।",
-        "spanish": "Estamos ubicados en la Calle Demo 123, Springfield. Hay estacionamiento en la calle cerca.",
     },
     "ask_human": {
         "english": "I understand. I can connect you to a human representative. Please hold while I transfer your call.",
         "urdu": "میں سمجھتا ہوں۔ میں آپ کو کسی انسانی نمائندے سے جوڑ سکتا ہوں۔ براہ کرم کال ٹرانسفر ہونے تک انتظار کریں۔",
         "hindi": "मैं समझता हूँ। मैं आपको किसी मानव प्रतिनिधि से जोड़ सकता हूँ। कृपया कॉल ट्रांसफर होने तक प्रतीक्षा करें।",
-        "spanish": "Entiendo. Puedo conectarle con un representante humano. Espere mientras transfiero su llamada.",
     },
     "ask_identity": {
         "english": "I am an AI assistant, not a human. If you would like, I can connect you to a human representative.",
         "urdu": "میں ایک AI اسسٹنٹ ہوں، انسان نہیں۔ اگر آپ چاہیں تو میں آپ کو کسی انسانی نمائندے سے جوڑ سکتا ہوں۔",
         "hindi": "मैं एक AI सहायक हूँ, इंसान नहीं। यदि आप चाहें तो मैं आपको किसी मानव प्रतिनिधि से जोड़ सकता हूँ।",
-        "spanish": "Soy un asistente de IA, no un humano. Si lo desea, puedo conectarle con un representante humano.",
     },
     "goodbye": {
         "english": "Thank you for calling Sunrise Family Clinic. Goodbye!",
         "urdu": "سنرے فیملی کلینک پر کال کرنے کا شکریہ۔ الوداع!",
         "hindi": "सनराइज़ फैमिली क्लिनिक पर कॉल करने के लिए धन्यवाद। अलविदा!",
-        "spanish": "Gracias por llamar a la Clínica Familiar Sunrise. ¡Adiós!",
     },
     "out_of_scope": {
         "english": "I am not sure about that. I will pass your request to a human representative who can help. Would you like me to do that?",
         "urdu": "مجھے اس بارے میں یقین نہیں۔ میں آپ کی درخواست کسی انسانی نمائندے کو دوں گا جو مدد کر سکتا ہے۔ کیا آپ چاہتے ہیں کہ میں ایسا کروں؟",
         "hindi": "मुझे इस बारे में यकीन नहीं है। मैं आपका अनुरोध किसी मानव प्रतिनिधि को दूँगा जो मदद कर सकता है। क्या आप चाहते हैं कि मैं ऐसा करूँ?",
-        "spanish": "No estoy seguro de eso. Pasaré su solicitud a un representante humano que pueda ayudar. ¿Quiere que lo haga?",
     },
     "not_offered": {
         "english": "I am sorry, but we do not offer that service. I can pass your request to a human representative if you like.",
         "urdu": "معذرت، ہم یہ خدمت نہیں دیتے۔ اگر آپ چاہیں تو میں آپ کی درخواست کسی انسانی نمائندے کو دے سکتا ہوں۔",
         "hindi": "क्षमा करें, हम यह सेवा नहीं देते। यदि आप चाहें तो मैं आपका अनुरोध किसी मानव प्रतिनिधि को दे सकता हूँ।",
-        "spanish": "Lo siento, pero no ofrecemos ese servicio. Puedo pasar su solicitud a un representante humano si lo desea.",
     },
     "stop": {
         "english": "Okay, I will stop. Please go ahead.",
         "urdu": "ٹھیک ہے، میں رک جاؤں گا۔ براہ کرم بتائیں۔",
         "hindi": "ठीक है, मैं रूक जाऊँगा। कृपया बताइए।",
-        "spanish": "Está bien, me detendré. Continúe, por favor.",
     },
 }
 
@@ -172,43 +150,38 @@ BOOKING_PROMPTS = {
         "english": "May I have your name, please?",
         "urdu": "براہ کرم اپنا نام بتائیں؟",
         "hindi": "कृपया अपना नाम बताइए?",
-        "spanish": "¿Me puede dar su nombre, por favor?",
     },
     "day": {
         "english": "Which day would you like to come in? We are open Monday to Saturday.",
         "urdu": "آپ کس دن آنا چاہتے ہیں؟ ہم پیر تا ہفتہ کھلے ہیں۔",
         "hindi": "आप किस दिन आना चाहते हैं? हम सोमवार से शनिवार खुले हैं।",
-        "spanish": "¿Qué día le gustaría venir? Estamos abiertos de lunes a sábado.",
     },
     "time": {
         "english": "What time would you prefer? We have slots from 9 AM to 4 PM.",
         "urdu": "آپ کون سا وقت پسند کریں گے؟ ہمارے پاس صبح 9 سے شام 4 بجے تک سلاٹس ہیں۔",
         "hindi": "आप कौन सा समय पसंद करेंगे? हमारे पास सुबह 9 से शाम 4 बजे तक स्लॉट हैं।",
-        "spanish": "¿Qué hora prefiere? Tenemos horarios de 9 a.m. a 4 p.m.",
     },
     "confirm": {
         "english": "Let me confirm: an appointment for {name} on {day} at {time}. Is that correct?",
         "urdu": "تصدیق کرتا ہوں: {name} کے لیے {day} کو {time} بجے ایپائنٹمنٹ۔ کیا یہ درست ہے؟",
         "hindi": "पुष्टि करता हूँ: {name} के लिए {day} को {time} बजे अपॉइंटमेंट। क्या यह सही है?",
-        "spanish": "Permítame confirmar: una cita para {name} el {day} a las {time}. ¿Es correcto?",
     },
     "done": {
         "english": "Your appointment is booked for {day} at {time}. We look forward to seeing you. Goodbye!",
         "urdu": "آپ کی ایپائنٹمنٹ {day} کو {time} بجے بک ہو گئی ہے۔ آپ سے ملنے کی امید ہے۔ الوداع!",
         "hindi": "आपकी अपॉइंटमेंट {day} को {time} बजे बुक हो गई है। आपसे मिलने की उम्मीद है। अलविदा!",
-        "spanish": "Su cita está reservada para el {day} a las {time}. Esperamos verle. ¡Adiós!",
     },
 }
 
 DAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday"]
 DAY_ALIASES = {
-    "monday": "monday", "mon": "monday", "پیر": "monday", "सोम": "monday", "som": "monday", "lunes": "monday",
-    "tuesday": "tuesday", "tue": "tuesday", "منگل": "tuesday", "मंगल": "tuesday", "tuesday": "tuesday", "martes": "tuesday",
-    "wednesday": "wednesday", "wed": "wednesday", "بدھ": "wednesday", "बुध": "wednesday", "budh": "wednesday", "miércoles": "wednesday", "miercoles": "wednesday",
-    "thursday": "thursday", "thu": "thursday", "جمعرات": "thursday", "गुरु": "thursday", "guru": "thursday", "jueves": "thursday",
-    "friday": "friday", "fri": "friday", "جمعہ": "friday", "शुक्र": "friday", "shukr": "friday", "viernes": "friday",
-    "saturday": "saturday", "sat": "saturday", "ہفتہ": "saturday", "शनि": "saturday", "shani": "saturday", "sábado": "saturday", "sabado": "saturday",
-    "sunday": "sunday", "اتوار": "sunday", "रवि": "sunday", "ravi": "sunday", "domingo": "sunday",
+    "monday": "monday", "mon": "monday", "پیر": "monday", "सोम": "monday", "som": "monday",
+    "tuesday": "tuesday", "tue": "tuesday", "منگل": "tuesday", "मंगल": "tuesday",
+    "wednesday": "wednesday", "wed": "wednesday", "بدھ": "wednesday", "बुध": "wednesday", "budh": "wednesday",
+    "thursday": "thursday", "thu": "thursday", "جمعرات": "thursday", "गुरु": "thursday", "guru": "thursday",
+    "friday": "friday", "fri": "friday", "جمعہ": "friday", "शुक्र": "friday", "shukr": "friday",
+    "saturday": "saturday", "sat": "saturday", "ہفتہ": "saturday", "शनि": "saturday", "shani": "saturday",
+    "sunday": "sunday", "اتوار": "sunday", "रवि": "sunday", "ravi": "sunday",
 }
 
 TIMES = ["9:00 am", "10:00 am", "11:00 am", "12:00 pm", "1:00 pm", "2:00 pm", "3:00 pm", "4:00 pm"]
@@ -242,7 +215,7 @@ def _extract_time(text):
 
 def _extract_name(text):
     """Extract a name after 'name is' / 'my name is' / 'میرا نام' / 'मेरा नाम'."""
-    m = re.search(r"(?:my name is|name is|میرا نام|میرا نام ہے|मेरा नाम|मेरा नाम है|me llamo|mi nombre es)\s+([a-zA-Z\u0600-\u06FF\u0900-\u097F]+)", text, re.IGNORECASE)
+    m = re.search(r"(?:my name is|name is|میرا نام|میرا نام ہے|मेरा नाम|मेरा नाम है)\s+([a-zA-Z\u0600-\u06FF\u0900-\u097F]+)", text, re.IGNORECASE)
     if m:
         return m.group(1).strip()
     return None
@@ -334,7 +307,7 @@ class Brain:
     def _set_language(self, text):
         # Follow the caller's current language on every utterance (they may
         # switch back and forth). detect_language is script-decisive for
-        # Urdu/Hindi and stopword-based for English/Spanish.
+        # Urdu/Hindi; Latin-script text defaults to English.
         self.language = detect_language(text)
 
     # ------------------------------------------------------------- main
@@ -434,7 +407,7 @@ class Brain:
             return BrainResponse(prompt, lang, "book_appointment", "speak",
                                  self.state)
         # caller confirmed (yes/haan/ha/yes)
-        if re.search(r"\b(yes|yeah|haan|ha|हाँ|हاں|ji|جی ہاں|sí|si|ok|okay|theek|ٹھیک)\b", text.lower()):
+        if re.search(r"\b(yes|yeah|haan|ha|हाँ|हاں|ji|جی ہاں|ok|okay|theek|ٹھیک)\b", text.lower()):
             self.booking["confirmed"] = True
             self.state = "end"
             done = BOOKING_PROMPTS["done"][lang].format(**self.booking)
