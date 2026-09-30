@@ -1,0 +1,16 @@
+# Training config for engine.py (LoRA fine-tuning of the STT)
+model: openai/whisper-tiny
+lora_r: 16
+lora_alpha: 32
+lora_dropout: 0.05
+learning_rate: 1.0e-4
+batch_size: 4
+grad_accum: 4
+max_steps_per_round: 50
+rounds: 4
+warmup_ratio: 0.1
+test_metadata: data/metadata.csv
+train_dir: data/train
+# train_kind: auto | librispeech_dummy | synthetic | local
+train_kind: auto
+max_train_clips: 16

@@ -19,7 +19,11 @@ Format: newest first. All state lives here (memory may be reset).
 - [x] P2: src/pipeline.py (text/file/mic modes, VAD, barge-in, per-stage latency log) — text + file verified end-to-end
 - [x] P4: src/tts.py (piper, all 4 languages verified) — intelligibility check pending
 - [x] P5: scripts/benchmark.py + LATENCY_REPORT.md (honest numbers: brain 0.1ms, TTS 1.3s warm, STT 40-54s CPU bottleneck, RAM 601MB, VRAM 0)
-- [ ] P6: training loop
+- [x] P6: engine.py (LoRA night loop) + tests/test_engine.py (4 pass: smoke, resume, STOP, best-ckpt)
+  - smoke: 2 rounds on synthetic (piper TTS) clips, checkpoints + CSV log
+  - resume: second run continues from max(round)+1 (proven)
+  - STOP file: halts after current round (proven)
+  - note: librispeech_dummy surveyed but blocked (ffmpeg + wrong file paths) -> synthetic used
 - [ ] P7: web demo
 - [ ] P8: data intake
 - [ ] P9: docs
