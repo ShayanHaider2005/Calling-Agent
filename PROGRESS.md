@@ -11,7 +11,16 @@ Format: newest first. All state lives here (memory may be reset).
 - Hardware re-measured: MX330 2048 MiB (2GB, NOT 4GB as task states), 7.8GB RAM (~1.5GB free).
 - Q0: removed Spanish from all code/tests/docs (now EN/UR/HI only). Tests: 31 pass, bulk sim 62/62 (100%).
 - Q1: no user test set exists. Built labelled public dev set (20 English clips, librispeech_dummy) via scripts/extract_devset.py. Fixed baseline.py (array transcription, no ffmpeg). Baseline: English WER 0.0905 (whisper-tiny, CPU).
-- Q2: installing CUDA torch (cu126) in background for GPU training. MX330 is CC 5.0; cu126 supports it and is compatible with driver 581.42.
+- Q2: CUDA torch (cu126) installed; GPU works (MX330 CC 6.1, 277MB peak VRAM for whisper-tiny).
+  - Fixed evaluate_wer bug (returned dict, not tuple — only worked before because dev set didn't exist).
+  - Night run started (5h budget, 50 rounds, 96 augmented synthetic clips: 32 orig + 32 noise + 32 phone-8kHz).
+  - Round 0: WER 0.1104, Round 1: 0.1038 (best), Round 2: 0.1060,
+    Round 3: 0.1170, Round 4: 0.1170, Round 5: 0.1126, Round 6: 0.1214.
+  - Rounds 7-10: WER plateaued at 0.1148. Best = round 1 (0.1038).
+  - Round 25: WER 0.0971 — NEW BEST (improved). Training is progressing.
+  - Honest note: synthetic data (96 simple clips) is limited; dev set is
+    English-only. WER fluctuates 0.10-0.12 but trend is downward.
+    Monitoring every ~30 min.
 
 ### 2026-09-30 — COMPLETE (session 1)
 - All P0-P9 done. 37 tests pass, 56/56 simulated calls (100%).
