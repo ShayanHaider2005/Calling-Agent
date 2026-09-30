@@ -94,8 +94,9 @@ def main():
     from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor
     from peft import PeftModel
 
+    device = "cuda" if torch.cuda.is_available() else "cpu"
     processor = AutoProcessor.from_pretrained(args.model)
-    base_model = AutoModelForSpeechSeq2Seq.from_pretrained(args.model)
+    base_model = AutoModelForSpeechSeq2Seq.from_pretrained(args.model).to(device)
 
     # baseline (no adapter)
     base_wer = eval_wer(rows, base_model, processor)
