@@ -18,7 +18,7 @@ Format: newest first. All state lives here (memory may be reset).
 - [x] P3: src/brain.py + scenarios/clinic.yaml + tests/test_brain.py (18 pass, bulk 56/56 = 100%)
 - [x] P2: src/pipeline.py (text/file/mic modes, VAD, barge-in, per-stage latency log) — text + file verified end-to-end
 - [x] P4: src/tts.py (piper, all 4 languages verified) — intelligibility check pending
-- [ ] P5: latency
+- [x] P5: scripts/benchmark.py + LATENCY_REPORT.md (honest numbers: brain 0.1ms, TTS 1.3s warm, STT 40-54s CPU bottleneck, RAM 601MB, VRAM 0)
 - [ ] P6: training loop
 - [ ] P7: web demo
 - [ ] P8: data intake
