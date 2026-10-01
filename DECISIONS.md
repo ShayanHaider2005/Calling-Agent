@@ -2,9 +2,19 @@
 
 ## Hardware reality (measured, not assumed)
 
-- GPU: NVIDIA **MX330, 2048 MiB VRAM** (the task assumed 4 GB). Driver 581.42, CUDA 13.0.
-- RAM: **7.8 GB total, ~1.6 GB free** at start.
+- GPU: NVIDIA **MX330, 2048 MiB (2 GB) VRAM** (the task assumed 4 GB). Driver 581.42, CUDA 13.0. CC 6.1 (Pascal).
+- RAM: **7.8 GB total, ~1.5 GB free**.
 - Python 3.12.10 via the `py` launcher (`python` is the Microsoft Store stub).
+
+## GPU budget (session 3, hard cap)
+
+- Total VRAM: **2048 MiB**. Hard working cap: **1.6 GB** (leave ~400 MB for OS/display).
+- Enforced via `torch.cuda.set_per_process_memory_fraction(0.8)`.
+- bitsandbytes 8-bit **works** on the MX330 (verified).
+- STT on GPU; brain LTM + TTS on CPU. Never two GPU jobs at once.
+- Target STT: **whisper-small** (244M) in 8-bit + LoRA + gradient checkpointing + batch 1.
+  Fall back to whisper-base, then whisper-tiny, if it OOMs. Log the choice.
+- OOM handling: lower batch size / segment length, clear cache, retry, log it.
 
 ## Key decisions
 

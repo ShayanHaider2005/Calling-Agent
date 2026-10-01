@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Calling-Agent — Test Call</title>
+<style>
+  :root { --bg:#0f172a; --card:#1e293b; --accent:#38bdf8; --text:#e2e8f0; --muted:#94a3b8; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background:var(--bg); color:var(--text); }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 1rem; }
+  h1 { font-size: 1.3rem; margin: 0.5rem 0; }
+  .banner { background:#7c2d12; color:#fff; padding:0.6rem 1rem; border-radius:8px; margin:0.75rem 0; font-size:0.9rem; }
+  .card { background:var(--card); border-radius:12px; padding:1rem; margin:0.75rem 0; }
+  .controls { display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center; }
+  button { font-size:1rem; padding:0.6rem 1.2rem; border:none; border-radius:8px; cursor:pointer; }
+  button:disabled { opacity:0.4; cursor:not-allowed; }
+  .start { background:#16a34a; color:#fff; }
+  .end { background:#dc2626; color:#fff; }
+  .mute { background:#475569; color:#fff; }
+  select, input[type=text] { font-size:1rem; padding:0.5rem; border-radius:8px; border:1px solid #475569; background:#0f172a; color:var(--text); }
+  .waveform { width:100%; height:80px; background:#0b1220; border-radius:8px; display:block; }
+  .status { display:flex; gap:1rem; font-size:0.85rem; color:var(--muted); flex-wrap:wrap; }
+  .badge { display:inline-block; padding:0.15rem 0.5rem; border-radius:999px; font-size:0.75rem; background:#334155; }
+  .badge.ur { direction:rtl; }
+  .transcript { max-height: 320px; overflow-y:auto; }
+  .turn { margin:0.5rem 0; padding:0.5rem; border-radius:8px; background:#0b1220; }
+  .turn .who { font-weight:600; font-size:0.8rem; color:var(--muted); }
+  .turn .text { margin-top:0.25rem; }
+  .turn .meta { font-size:0.75rem; color:var(--muted); margin-top:0.25rem; }
+  .turn.agent { border-left:3px solid var(--accent); }
+  .turn.caller { border-left:3px solid #a3e635; }
+  .turn.ur { direction:rtl; text-align:right; }
+  .speaking-indicator { display:inline-block; width:10px; height:10px; border-radius:50%; background:#475569; margin-right:0.3rem; }
+  .speaking-indicator.active { background:#22c55e; }
+  .speaking-indicator.agent { background:var(--accent); }
+  .error { background:#7f1d1d; color:#fff; padding:0.6rem; border-radius:8px; margin:0.5rem 0; }
+  .hidden { display:none; }
+  .font-ur { font-family: "Noto Nastaliq Urdu", "Jameel Noori Nastaleeq", "Urdu Typesetting", serif; }
+  .font-hi { font-family: "Noto Sans Devanagari", "Mangal", "Kohinoor Devanagari", sans-serif; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Calling-Agent — Test Call</h1>
+
+  <div class="banner">
+    You are speaking with an <strong>AI assistant</strong>. This call <strong>may be recorded</strong>.
+  </div>
+
+  <div class="card">
+    <div class="controls">
+      <button id="startBtn" class="start">Start Call</button>
+      <button id="endBtn" class="end" disabled>End Call</button>
+      <button id="muteBtn" class="mute" disabled>Mute</button>
+      <select id="scenario">
+        <option value="clinic">Clinic</option>
+        <option value="restaurant">Restaurant</option>
+      </select>
+      <select id="langHint">
+        <option value="auto">Language: Auto</option>
+        <option value="english">English</option>
+        <option value="urdu">Urdu</option>
+        <option value="hindi">Hindi</option>
+      </select>
+      <label><input type="checkbox" id="lowMem"> Low-memory mode (CPU STT)</label>
+      <label><input type="checkbox" id="saveCall"> Save recording</label>
+    </div>
+  </div>
+
+  <div class="card">
+    <canvas id="waveform" class="waveform"></canvas>
+    <div class="status" style="margin-top:0.5rem">
+      <span><span id="micDot" class="speaking-indicator"></span>Mic</span>
+      <span><span id="agentDot" class="speaking-indicator agent"></span>Agent</span>
+      <span id="statusText">Idle</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="controls" style="margin-bottom:0.5rem">
+      <input type="text" id="textInput" placeholder="Type a message (fallback if mic fails)..." style="flex:1; min-width:200px">
+      <button id="sendText">Send</button>
+    </div>
+    <div id="transcript" class="transcript"></div>
+  </div>
+
+  <div class="card">
+    <div class="status" id="statusPanel">
+      <span>Models: loading…</span>
+    </div>
+  </div>
+
+  <div id="errorBox" class="error hidden"></div>
+</div>
+
+<script>
+let ws = null, audioCtx = null, mediaStream = null, sourceNode = null, analyser = null;
+let recording = false, muted = false, callActive = false;
+let chunks = [];
+
+const SAMPLE_RATE = 16000;
+
+function showError(msg) {
+  const box = document.getElementById('errorBox');
+  box.textContent = msg;
+  box.classList.remove('hidden');
+  setTimeout(() => box.classList.add('hidden'), 8000);
+}
+
+function addTurn(who, text, lang, latency, action) {
+  const div = document.createElement('div');
+  div.className = 'turn ' + who;
+  if (lang === 'urdu') div.classList.add('ur');
+  const whoLabel = who === 'agent' ? 'Agent' : 'You';
+  div.innerHTML = '<div class="who">' + whoLabel + '</div>' +
+    '<div class="text"></div>' +
+    '<div class="meta">' + (lang ? lang : '') + (latency ? ' · ' + latency.toFixed(2) + 's' : '') + '</div>';
+  div.querySelector('.text').textContent = text;
+  document.getElementById('transcript').prepend(div);
+}
+
+function drawWaveform() {
+  const canvas = document.getElementById('waveform');
+  const ctx = canvas.getContext('2d');
+  canvas.width = canvas.offsetWidth;
+  canvas.height = canvas.offsetHeight;
+  function draw() {
+    if (!analyser) return;
+    const data = new Uint8Array(analyser.frequencyBinCount);
+    analyser.getByteTimeDomainData(data);
+    ctx.fillStyle = '#0b1220';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.strokeStyle = '#38bdf8';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    const step = canvas.width / data.length;
+    for (let i = 0; i < data.length; i++) {
+      const y = (data[i] / 255) * canvas.height;
+      i === 0 ? ctx.moveTo(0, y) : ctx.lineTo(i * step, y);
+    }
+    ctx.stroke();
+    // mic level
+    let sum = 0;
+    for (let i = 0; i < data.length; i++) sum += Math.abs(data[i] - 128);
+    const level = sum / data.length / 128;
+    document.getElementById('micDot').classList.toggle('active', level > 0.05);
+    requestAnimationFrame(draw);
+  }
+  draw();
+}
+
+async function startCall() {
+  try {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    sourceNode = audioCtx.createMediaStreamSource(mediaStream);
+    analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 2048;
+    sourceNode.connect(analyser);
+    drawWaveform();
+
+    const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+    ws = new WebSocket(proto + '://' + location.host + '/ws');
+    ws.onopen = () => {
+      ws.send(JSON.stringify({
+        type: 'start',
+        scenario: document.getElementById('scenario').value,
+        lang_hint: document.getElementById('langHint').value,
+        low_memory: document.getElementById('lowMem').checked,
+      }));
+      callActive = true;
+      document.getElementById('startBtn').disabled = true;
+      document.getElementById('endBtn').disabled = false;
+      document.getElementById('muteBtn').disabled = false;
+      document.getElementById('statusText').textContent = 'Call active';
+    };
+    ws.onmessage = async (ev) => {
+      const data = JSON.parse(ev.data);
+      if (data.type === 'reply') {
+        document.getElementById('agentDot').classList.add('active');
+        addTurn('agent', data.reply_text, data.language, data.latency, data.action);
+        if (data.reply_audio_b64) {
+          const audio = new Audio('data:audio/wav;base64,' + data.reply_audio_b64);
+          audio.onended = () => document.getElementById('agentDot').classList.remove('active');
+          audio.play().catch(() => document.getElementById('agentDot').classList.remove('active'));
+        } else {
+          setTimeout(() => document.getElementById('agentDot').classList.remove('active'), 1500);
+        }
+      } else if (data.type === 'interrupted') {
+        document.getElementById('agentDot').classList.remove('active');
+      } else if (data.type === 'ended') {
+        endCallUI();
+      } else if (data.type === 'error') {
+        showError('Server error: ' + data.message);
+      }
+    };
+    ws.onerror = () => showError('WebSocket error. Is the server running?');
+    ws.onclose = () => { if (callActive) showError('Connection closed.'); };
+
+    // stream audio chunks
+    const dest = audioCtx.createMediaStreamDestination();
+    sourceNode.connect(dest);
+    const recorder = new MediaRecorder(dest.stream);
+    recorder.ondataavailable = (e) => {
+      if (ws && ws.readyState === WebSocket.OPEN && !muted) {
+        e.data.arrayBuffer().then(buf => ws.send(buf));
+      }
+    };
+    recorder.start(100);
+    window._recorder = recorder;
+  } catch (e) {
+    showError('Microphone error: ' + e.message + '. Use the text input below.');
+  }
+}
+
+function endCallUI() {
+  callActive = false;
+  document.getElementById('startBtn').disabled = false;
+  document.getElementById('endBtn').disabled = true;
+  document.getElementById('muteBtn').disabled = true;
+  document.getElementById('statusText').textContent = 'Idle';
+  document.getElementById('micDot').classList.remove('active');
+  document.getElementById('agentDot').classList.remove('active');
+}
+
+function endCall() {
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({ type: 'end' }));
+  }
+  if (window._recorder) window._recorder.stop();
+  if (mediaStream) mediaStream.getTracks().forEach(t => t.stop());
+  if (audioCtx) audioCtx.close();
+  endCallUI();
+}
+
+document.getElementById('startBtn').addEventListener('click', startCall);
+document.getElementById('endBtn').addEventListener('click', endCall);
+document.getElementById('muteBtn').addEventListener('click', () => {
+  muted = !muted;
+  document.getElementById('muteBtn').textContent = muted ? 'Unmute' : 'Mute';
+});
+document.getElementById('sendText').addEventListener('click', () => {
+  const text = document.getElementById('textInput').value.trim();
+  if (!text) return;
+  addTurn('caller', text, '', 0, '');
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({ type: 'text', text }));
+  }
+  document.getElementById('textInput').value = '';
+});
+document.getElementById('textInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') document.getElementById('sendText').click();
+});
+
+// status panel
+fetch('/api/status').then(r => r.json()).then(d => {
+  const el = document.getElementById('statusPanel');
+  el.innerHTML = '<span>STT: ' + d.stt_model + '</span>' +
+    '<span>Mode: ' + d.mode + '</span>' +
+    '<span>VRAM: ' + d.vram + '</span>' +
+    '<span>Flags: ' + d.flags + '</span>';
+}).catch(() => {
+  document.getElementById('statusPanel').innerHTML = '<span>Status unavailable</span>';
+});
+</script>
+</body>
+</html>

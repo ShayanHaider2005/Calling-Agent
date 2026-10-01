@@ -1,10 +1,10 @@
 # Training config for engine.py (LoRA fine-tuning of the STT)
-model: openai/whisper-tiny
+model: openai/whisper-small
 lora_r: 16
 lora_alpha: 32
 lora_dropout: 0.05
 learning_rate: 1.0e-4
-batch_size: 4
+batch_size: 2
 grad_accum: 4
 max_steps_per_round: 50
 rounds: 50
@@ -14,3 +14,5 @@ train_dir: data/train
 # train_kind: auto | librispeech_dummy | synthetic | local
 train_kind: auto
 max_train_clips: 16
+# GPU VRAM cap (fraction of total; 0.8 = 1.6GB on a 2GB GPU)
+vram_fraction: 0.8

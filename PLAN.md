@@ -1,57 +1,67 @@
-# PLAN — Calling-Agent session 2
+# PLAN — Calling-Agent session 3
 
-Goal: multilingual (English / Urdu / Hindi) speech-to-speech phone-call agent.
-**Three languages only — Spanish is removed.** Chained pipeline:
-EARS (Whisper STT) -> BRAIN (small LM + state machine) -> MOUTH (TTS) -> CALL HANDLING (VAD, barge-in, language following, latency).
+Goal: a proper call UI for a test call tomorrow, a harder curriculum training run
+that genuinely improves the ears, and a client-ready report with honest numbers.
 
-Hardware (measured): NVIDIA MX330 **2048 MiB VRAM** (task says 4GB; plan for 2GB), 7.8GB RAM (~1.5GB free), Python 3.12.10 via `py`. $0 budget.
+Hardware (measured): NVIDIA MX330 **2048 MiB VRAM** (2GB), 7.8GB RAM, Python 3.12.10.
+GPU is free (no leftover processes). $0 budget.
 
-## Task list (priority order, timeboxed)
+## GPU budget (hard cap)
 
-- [ ] **Q0. Orientation + repair** (~60 min)
-  - Remove Spanish from all code/tests/docs (test sentences, simulated callers, TTS survey, config)
-  - Run all tests; fix anything broken
-  - Solve session-1 gaps that fit the constraints
-  - Acceptance: 3 languages only; all tests pass.
+- Total VRAM: **2048 MiB**. Hard working cap: **1.6 GB** (leave ~400 MB for OS/display).
+- Enforced in code via `torch.cuda.set_per_process_memory_fraction(0.8)`.
+- STT model on GPU; brain LLM + TTS on CPU.
+- Catch OOM: lower batch size / segment length, clear cache, retry, log it.
+- Target STT: **whisper-small** (244M) in 8-bit + LoRA + gradient checkpointing + batch 1.
+  If it OOMs, fall back to whisper-base, then whisper-tiny. Log the choice.
 
-- [ ] **Q1. Test data check** (~60 min)
-  - Look for `data/testset` (metadata.csv + audio). If a verified set exists, use it; run baseline.py if baseline_results.json missing.
-  - If NOT: use a small public dev split clearly labelled "public dev set, not my test set" as a temporary stand-in. Never train on it.
-  - Acceptance: a labelled dev set exists; baseline runs if real test set present.
+## 5-hour schedule
 
-- [ ] **Q2. Real training run** (~5 h, background)
-  - `python engine.py night` in background.
-  - Data: public permissively-licensed speech (no login) + augmentation (noise, 8kHz phone sim) + synthetic mixed-language (labelled).
-  - Monitor ~every 30 min; respect STOP; rollback if worse; save best. CPU work only while GPU busy.
-  - Acceptance: training runs; score progression logged.
+- [ ] **R0. Orientation + GPU budget** (~30 min)
+  - Run all tests; fix anything broken.
+  - Verify GPU free; record total/free VRAM in DECISIONS.md.
+  - Verify whisper-small fits under the cap (8-bit + LoRA); downgrade + log if not.
+  - Acceptance: tests pass; model size chosen and recorded; cap enforced.
 
-- [ ] **Q3. Language packs** (~90 min)
-  - Per-language adapter loading + language-detection routing.
-  - `scripts/release_gate.py`: a new pack must improve its own language on test/dev AND not regress others beyond tolerance.
-  - Hindi pack skeleton; smoke-train only if time.
-  - Acceptance: release_gate.py works; Hindi pack skeleton exists.
+- [ ] **R1. Call UI** (~1.5 h, CPU)
+  - `scripts/run_demo.py` — one command, localhost only.
+  - Phone-call screen: Start/End Call, mic access, live waveform, who-is-speaking,
+    live transcript, language badge, per-turn latency, mute.
+  - Banner: "You are speaking with an AI assistant. This call may be recorded."
+  - Barge-in; scenario selector (clinic/restaurant); language hint (auto/EN/UR/HI).
+  - Text-input fallback; save call (transcript + latency + optional audio, git-ignored).
+  - Status panel (models, sizes, DEMO-ONLY flags, CPU/GPU mode, VRAM).
+  - `scripts/check_demo.py` — automated health check with synthetic caller.
+  - RTL for Urdu; Urdu/Hindi font; low-memory mode (CPU STT).
+  - Acceptance: UI runs; check_demo.py passes; within VRAM cap.
 
-- [ ] **Q4. Brain** (~90 min)
-  - Fix session-1 simulated-call failures.
-  - Expand to 150 simulated calls: UR-EN and HI-EN switching, disfluencies, injected STT errors, unclear input (agent asks to repeat).
-  - Second demo scenario (restaurant reservations) to prove business data is swappable.
-  - Report pass rate + all failures.
+- [ ] **R2. Curriculum training** (~2.5 h, GPU)
+  - Staged difficulty: clean -> noise -> phone-8kHz -> speed/volume -> mixed -> hard-example mining.
+  - Advance only when dev score stops improving; keep best; roll back if worse.
+  - Regression check: English must not get worse while Urdu improves.
+  - Watch for overfitting; respect STOP; monitor every ~30 min.
+  - Save scores CSV + plot (baseline vs each stage).
+  - Acceptance: stages run; scores recorded; best checkpoint saved.
 
-- [ ] **Q5. Latency** (~60 min)
-  - Optimize: faster inference engine (if license allows), quantization, warm-up, sentence-level TTS streaming.
-  - Report before/after honestly.
+- [ ] **R3. Brain hardening** (~30 min, CPU)
+  - Harder simulated callers: interrupting, vague, angry, mid-sentence switch, STT errors.
+  - Target >=200 simulated calls; fix failures; report pass rate + ALL failures.
+  - Acceptance: >=200 calls; pass rate + failures reported.
 
-- [ ] **Q6. Video-link data intake** — only if links.txt has allowlisted (CC/public-domain) entries; else skip.
+- [ ] **R4. Final measurements** (~30 min, GPU free after training)
+  - Baseline vs final WER per language + per mix on held-out set.
+  - End-to-end latency (GPU + CPU); peak VRAM/RAM; simulated-call pass rate; TTS check.
+  - Acceptance: all measured and recorded.
 
-- [ ] **Q7. Docs + CI** (~60 min)
-  - Rewrite README (first person, Mermaid diagram, honest status, real results table, limitations, responsible use, roadmap).
-  - GitHub Actions workflow: CPU-only unit tests (no model downloads, no cost).
+- [ ] **R5. Client report** — CLIENT_REPORT.md (plain words, honest numbers, limitations, licensing, next steps).
+- [ ] **R6. Demo guide** — DEMO_GUIDE.md (start UI, checklist, 10 test calls, weak spots, GPU freeing, failure recovery).
+- [ ] **R7. README** — first person, UI instructions, GPU requirements, latest results.
 
 ## Final 30 min
-- Final push; MORNING_REPORT_2.md (done/not done, push status, test set vs stand-in, score progression, pass rate + failures, latency before/after, license flags, problems, next 3 commands).
+- Final push; MORNING_REPORT_3.md (done/not done, push status, UI command, STT size + VRAM, training stages, pass rate + failures, latency, license flags, client-report cautions, problems, next 3 commands).
 
 ## Rules
-- Work on the current development branch; do NOT create new branches (per user instruction).
-- Never commit/push to main/master; never force-push; no file >50MB; no secrets/recordings in git.
+- Work on overnight-build-3; never commit/push main; never force-push; no file >50MB.
+- No two GPU jobs at once; UI/tests on CPU while training runs.
 - Log blockers in PROGRESS.md under BLOCKED after 3 failed attempts / 20 min.
 - Never claim untested results.

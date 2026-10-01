@@ -187,7 +187,7 @@ def _resample(pcm, orig_sr, target_sr):
 # ------------------------------------------------------------------ model
 
 def setup_model(cfg):
-    """Load whisper + LoRA. Returns (model, processor)."""
+    """Load whisper + LoRA (8-bit on GPU). Returns (model, processor)."""
     import torch
     from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor
     from peft import LoraConfig, get_peft_model
@@ -195,8 +195,20 @@ def setup_model(cfg):
     model_name = cfg["model"]
     device = "cuda" if torch.cuda.is_available() else "cpu"
     processor = AutoProcessor.from_pretrained(model_name)
-    model = AutoModelForSpeechSeq2Seq.from_pretrained(model_name).to(device)
-    model.config.use_cache = False
+
+    if device == "cuda":
+        # hard VRAM cap: 80% of total (leaves headroom for OS/display)
+        frac = cfg.get("vram_fraction", 0.8)
+        torch.cuda.set_per_process_memory_fraction(frac)
+        from transformers import BitsAndBytesConfig
+        qcfg = BitsAndBytesConfig(load_in_8bit=True)
+        model = AutoModelForSpeechSeq2Seq.from_pretrained(
+            model_name, quantization_config=qcfg, device_map="auto")
+        model.config.use_cache = False
+        model.gradient_checkpointing_enable()
+    else:
+        model = AutoModelForSpeechSeq2Seq.from_pretrained(model_name).to(device)
+        model.config.use_cache = False
 
     # target attention projections (whisper uses q_proj/k_proj/v_proj/out_proj)
     target = ["q_proj", "v_proj", "k_proj", "out_proj",
@@ -379,7 +391,18 @@ def cmd_night(args):
 
     for r in range(start_round, rounds):
         t0 = time.time()
-        steps = train_round(model, processor, ds, cfg, r, max_steps)
+        # OOM handling: retry with smaller batch, clear cache, log it
+        bs = cfg["batch_size"]
+        for attempt in range(3):
+            try:
+                cfg["batch_size"] = max(1, bs // (2 ** attempt))
+                steps = train_round(model, processor, ds, cfg, r, max_steps)
+                break
+            except torch.cuda.OutOfMemoryError:
+                print(f"  OOM at batch_size={cfg['batch_size']} — clearing cache, retrying smaller")
+                torch.cuda.empty_cache()
+                if attempt == 2:
+                    raise
         train_t = time.time() - t0
         wer, _ = evaluate_wer(model, processor, cfg)
         print(f"round {r}: {steps} steps in {train_t:.0f}s, WER={wer:.4f}")
