@@ -30,10 +30,16 @@ tested, but it is not yet fast or accurate enough for real calls. See
 | Language | Status | Notes |
 |---|---|---|
 | English | Working | STT and TTS both functional. Only language with a dev set so far. |
-| Urdu | Working (TTS weak) | STT and TTS functional; TTS voice is weak (see TTS_NOTES.md). Urdu-English mixed speech is the priority. |
-| Hindi | Skeleton | TTS voice is poor (DEMO-ONLY). No dev data yet. Needs a better voice + native-speaker test. |
+| Urdu | Working (TTS weak) | STT and TTS functional; TTS voice is weak (see TTS_NOTES.md). |
+| Hindi | Skeleton | TTS voice is poor (DEMO-ONLY). No dev data yet. |
 
-Spanish was removed in session 2; the project is now English/Urdu/Hindi only.
+## GPU requirements
+
+- **GPU:** NVIDIA MX330 (2 GB VRAM) — the STT model runs on GPU.
+- **STT model:** OpenAI **Whisper-small** (244M params), LoRA fine-tuned in 8-bit.
+  This is the largest Whisper variant that fits in a 1.6 GB VRAM cap on this machine.
+- **Brain LLM + TTS:** CPU (Piper).
+- A **low-memory mode** runs the STT on CPU when the GPU is busy or too full.
 
 ## Quick start
 
@@ -43,20 +49,24 @@ py -m venv .venv
 .venv\Scripts\python.exe scripts\check_env.py
 ```
 
-## Run the agent
+## Run the call UI (one command)
 
 ```bash
-# text mode (no mic needed)
-.venv\Scripts\python.exe -m src.pipeline text
+.venv\Scripts\python.exe scripts\run_demo.py
+# open http://127.0.0.1:8000
+```
 
-# file mode (audio in, audio out)
-.venv\Scripts\python.exe -m src.pipeline file -i path\to\audio.wav
+A phone-call screen: Start/End Call, live waveform, who-is-speaking indicator,
+live transcript, language badge, per-turn latency, mute, barge-in, scenario
+selector (clinic/restaurant), language hint, text-input fallback, and a status
+panel. See DEMO_GUIDE.md for a pre-demo checklist and 10 test calls.
 
-# mic mode (live, with barge-in)
-.venv\Scripts\python.exe -m src.pipeline mic
+## Run the agent (other modes)
 
-# web demo (localhost only)
-.venv\Scripts\python.exe scripts\web_demo.py
+```bash
+.venv\Scripts\python.exe -m src.pipeline text      # text mode (no mic)
+.venv\Scripts\python.exe -m src.pipeline file -i audio.wav
+.venv\Scripts\python.exe -m src.pipeline mic      # live mic
 ```
 
 ## Record a test set (optional, for evaluation)
@@ -79,6 +89,7 @@ mono WAV to `data/testset_audio/` + a row in `data/metadata.csv`. This set is
 
 ```bash
 .venv\Scripts\python.exe engine.py smoke              # tiny run to prove the loop
+.venv\Scripts\python.exe engine.py curriculum         # staged-difficulty training
 .venv\Scripts\python.exe engine.py night --hours 4    # time-budgeted LoRA rounds
 ```
 
@@ -91,20 +102,22 @@ root to stop gracefully.
 
 ```bash
 .venv\Scripts\python.exe -m pytest tests/ -v
+.venv\Scripts\python.exe scripts\check_demo.py       # automated call-flow health check
 ```
 
 ## Results (only real measured numbers)
 
 | Metric | Value | How measured |
 |---|---|---|
-| English STT WER (public dev set) | 0.0905 | `baseline.py`, whisper-tiny, CPU, 20 clips |
+| English STT WER (public dev set) | 0.0971 (best), 0.1015 (final) | `engine.py eval`, whisper-small, 20 clips |
 | Brain latency | 0.1 ms mean | `benchmark.py`, 50 turns |
-| TTS latency (warm) | 1.3 s/sentence | Piper, CPU |
-| End-to-end latency | 42–62 s | CPU; STT is the bottleneck |
-| Peak RAM | 601 MB | STT + TTS + brain loaded |
-| Peak VRAM | 0 MB | CPU-only torch (MX330 unused) |
-| Simulated-call pass rate | 263/263 (100%) | `test_brain.py` bulk simulation |
-| Unit tests | 36 passed | eval + brain + ingest + packs |
+| TTS latency (warm) | 2.0–3.0 s | Piper, CPU |
+| End-to-end latency (GPU, warm) | 7.7–9.7 s | `benchmark.py` |
+| End-to-end latency (CPU) | 42–62 s | `benchmark.py` |
+| Peak VRAM (training) | 381 MiB | whisper-small 8-bit + LoRA |
+| Peak VRAM (inference) | 277 MB | whisper-small 8-bit |
+| Simulated-call pass rate | 273/273 (100%) | `test_brain.py` bulk simulation |
+| Unit tests | 43 passed | eval + brain + ingest + packs + augment |
 
 Everything not listed here is **TBD** — I have not measured it, and I won't guess.
 
@@ -124,37 +137,34 @@ Everything not listed here is **TBD** — I have not measured it, and I won't gu
 
 ## Known limitations
 
-- **CPU STT is too slow** for a ~1.5 s response target (42–62 s end to end). The
-  fix is GPU STT; the MX330 (2 GB) is currently unused because I installed a
-  CPU-only torch to stay under the download budget.
-- **Urdu and Hindi TTS voices are weak** (round-trip WER 0.78 / 1.00). Hindi is
-  DEMO-ONLY until a better voice is found.
+- **Latency is 7.7–9.7 s** (GPU), not the ~1.5 s target. STT (~5.7 s) is the
+  bottleneck. The first call is slower (~47 s) while the model loads.
+- **Urdu and Hindi TTS voices are weak.** Hindi is DEMO-ONLY until a better
+  voice is found.
 - **No user test set yet.** The only labelled data is a small public English dev
   set (a stand-in, clearly labelled — not my test set). Urdu/Hindi WER is unmeasured.
+- **Synthetic training data.** Accuracy is limited by the small synthetic set.
 - **No real phone lines.** The agent runs over mic/file/web, not a phone network.
-- **The optional LLM path is untested at runtime.** The rule-based brain is the
-  tested default; the LLM is wired in but off by default (RAM).
+- **Small-model ceiling.** Whisper-small on a 2 GB GPU has a lower accuracy
+  ceiling than larger models on bigger hardware.
 
 ## Roadmap
 
-1. **GPU STT** — install CUDA torch, move STT to the MX330, cut end-to-end latency.
-2. **Real test set** — record Urdu/English/Hindi clips, verify the prompts, get
-   per-language WER.
-3. **Better TTS** — find stronger Urdu/Hindi voices, run native-speaker listening tests.
+1. **Real test set** — record Urdu/English/Hindi clips, get per-language WER.
+2. **Better TTS** — find stronger Urdu/Hindi voices, run native-speaker tests.
+3. **Lower latency** — pre-warm the model, use a faster/streaming STT.
 4. **Language packs** — train per-language LoRA adapters, wire the release gate.
-5. **More scenarios** — prove the business data is swappable (restaurant scenario
-   already added).
-6. **Phone integration** — connect a real phone line (future phase).
+5. **Phone integration** — connect a real phone line (future phase).
 
 ## Layout
 
 ```
 configs/train.yaml      training config
 scenarios/              business knowledge (clinic.yaml, restaurant.yaml)
-src/                    eval, brain, pipeline, tts, packs
+src/                    eval, brain, pipeline, tts, packs, augment
 engine.py               overnight LoRA training loop
-scripts/                baseline, record_testset, benchmark, tts_check, web_demo,
-                        ingest_links, release_gate, extract_devset
+scripts/                run_demo, check_demo, baseline, record_testset, benchmark,
+                        tts_check, web_demo, ingest_links, release_gate, extract_devset
 packs/                  per-language packs (english, urdu, hindi)
 data/                   dev set + prompts (audio git-ignored)
 results/                eval/benchmark outputs (regenerable, git-ignored)
