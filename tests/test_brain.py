@@ -342,6 +342,21 @@ def _gen_calls():
     for i, u in enumerate(unclear):
         lang = LANGUAGES[i % len(LANGUAGES)]
         calls.append((["hello", u, "goodbye"], lang))
+    # --- harder: vague / angry / interrupting / mid-sentence switch
+    harder = [
+        (["hello", "something", "you know", "the thing", "goodbye"], "english"),
+        (["hello", "this is ridiculous", "you are useless", "whatever", "goodbye"], "english"),
+        (["hello", "I want a refund", "this is unacceptable", "goodbye"], "english"),
+        (["hello", "میں want to book", "the appointment", "goodbye"], "english"),
+        (["hello", "मैं want to book", "the appointment", "goodbye"], "english"),
+        (["hello", "میں ایپائنٹمنٹ book کرنا چاہتا ہوں", "goodbye"], "english"),
+        (["hello", "what", "hmm", "the", "um", "price", "goodbye"], "english"),
+        (["hello", "stop", "wait", "stop", "go ahead", "goodbye"], "english"),
+        (["hello", "are you a human", "are you a robot", "are you sure", "goodbye"], "english"),
+        (["hello", "میں نہیں سمجھا", "کیا آپ دہرا سکتے ہیں", "goodbye"], "urdu"),
+        (["hello", "मैं समझा नहीं", "क्या आप दोहरा सकते हैं", "goodbye"], "hindi"),
+    ]
+    calls.extend(harder)
     # --- trick / promise questions
     for i, q in enumerate(TRICK_QUESTIONS):
         lang = LANGUAGES[i % len(LANGUAGES)]
