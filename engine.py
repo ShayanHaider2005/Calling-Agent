@@ -140,18 +140,21 @@ def load_train_dataset(cfg):
                 pcm = _resample(pcm, sr, 16000)
             rows.append({"audio": {"array": pcm, "sampling_rate": 16000},
                          "text": s, "language": "mixed"})
-        # --- augmentation: add noise + 8kHz phone-quality variants ---
-        # Labelled clearly as augmented synthetic data.
-        from src.augment import augment as _augment
-        base_rows = list(rows)
-        for i, r in enumerate(base_rows):
-            pcm = r["audio"]["array"]
-            noisy = _augment(pcm, sr=16000, phone=False, noise_snr=15.0, seed=i)
-            rows.append({"audio": {"array": noisy, "sampling_rate": 16000},
-                         "text": r["text"], "language": r.get("language", "english")})
-            phone = _augment(pcm, sr=16000, phone=True, seed=i + 1000)
-            rows.append({"audio": {"array": phone, "sampling_rate": 8000},
-                         "text": r["text"], "language": r.get("language", "english")})
+        # --- augmentation variants (curriculum stages) ---
+        aug = cfg.get("augment", "all")
+        if aug != "none":
+            from src.augment import augment as _augment
+            base_rows = list(rows)
+            for i, r in enumerate(base_rows):
+                pcm = r["audio"]["array"]
+                if aug in ("noise", "all", "mixed"):
+                    noisy = _augment(pcm, sr=16000, phone=False, noise_snr=15.0, seed=i)
+                    rows.append({"audio": {"array": noisy, "sampling_rate": 16000},
+                                 "text": r["text"], "language": r.get("language", "english")})
+                if aug in ("phone", "all", "mixed"):
+                    phone = _augment(pcm, sr=16000, phone=True, seed=i + 1000)
+                    rows.append({"audio": {"array": phone, "sampling_rate": 8000},
+                                 "text": r["text"], "language": r.get("language", "english")})
         return Dataset.from_list(rows)
 
     if kind == "local":
@@ -467,6 +470,95 @@ def cmd_eval(args):
     os.makedirs("results", exist_ok=True)
     with open(out, "w", encoding="utf-8") as f:
         json.dump(details, f, indent=2, ensure_ascii=False)
+
+
+# Curriculum stages: (name, augmentation level). Advance when dev WER plateaus.
+CURRICULUM = [
+    ("clean", "none"),
+    ("noise", "noise"),
+    ("phone", "phone"),
+    ("mixed", "mixed"),
+]
+
+
+def cmd_curriculum(args):
+    """Staged-difficulty training. Advance when dev WER stops improving."""
+    import torch
+    cfg = load_config()
+    rounds_per_stage = args.rounds_per_stage
+    best_wer = float("inf")
+    os.makedirs(CHECKPOINT_DIR, exist_ok=True)
+    model, processor = setup_model(cfg)
+    stage_scores = []
+    for stage_name, aug in CURRICULUM:
+        if stop_requested():
+            print("STOP file found — stopping.")
+            break
+        print(f"\n=== stage: {stage_name} (aug={aug}) ===")
+        cfg["augment"] = aug
+        ds = load_train_dataset(cfg)
+        print(f"train clips: {len(ds)}")
+        stage_best = float("inf")
+        stall = 0
+        for r in range(rounds_per_stage):
+            if stop_requested():
+                break
+            t0 = time.time()
+            bs = cfg["batch_size"]
+            for attempt in range(3):
+                try:
+                    cfg["batch_size"] = max(1, bs // (2 ** attempt))
+                    steps = train_round(model, processor, ds, cfg, r, cfg["max_steps_per_round"])
+                    break
+                except torch.cuda.OutOfMemoryError:
+                    print(f"  OOM — clearing cache, retrying smaller")
+                    torch.cuda.empty_cache()
+                    if attempt == 2:
+                        raise
+            wer, _ = evaluate_wer(model, processor, cfg)
+            print(f"  round {r}: WER={wer:.4f} ({time.time()-t0:.0f}s)")
+            save_checkpoint(model, processor, r, wer, tag="last")
+            log_csv(f"{stage_name}_{r}", wer, time.time() - t0, f"round_{r}_last")
+            stage_scores.append({"stage": stage_name, "round": r, "wer": wer})
+            if wer == wer and wer < best_wer:
+                best_wer = wer
+                save_checkpoint(model, processor, r, wer, tag="best")
+                if os.path.exists(BEST_DIR):
+                    shutil.rmtree(BEST_DIR)
+                shutil.copytree(os.path.join(CHECKPOINT_DIR, f"round_{r}_best"), BEST_DIR)
+                print(f"  new best WER={wer:.4f}")
+            if wer < stage_best - 0.005:
+                stage_best = wer
+                stall = 0
+            else:
+                stall += 1
+            if stall >= 2:
+                print(f"  plateaued — advancing to next stage")
+                break
+    # save scores CSV + plot
+    import csv
+    os.makedirs("results", exist_ok=True)
+    with open("results/curriculum_scores.csv", "w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=["stage", "round", "wer"])
+        w.writeheader()
+        w.writerows(stage_scores)
+    try:
+        import matplotlib
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+        stages = [s["stage"] for s in stage_scores]
+        wers = [s["wer"] for s in stage_scores]
+        plt.figure(figsize=(8, 4))
+        plt.plot(range(len(wers)), wers, "o-")
+        plt.xticks(range(len(wers)), [f"{s}" for s in stages], rotation=30)
+        plt.ylabel("WER")
+        plt.title("Curriculum training: WER per round")
+        plt.tight_layout()
+        plt.savefig("results/curriculum_plot.png", dpi=100)
+        print("wrote results/curriculum_plot.png")
+    except Exception as e:
+        print(f"plot skipped: {e}")
+    print(f"\ndone. best_wer={best_wer:.4f}")
     print(f"wrote {out}")
 
 
@@ -478,6 +570,8 @@ def main():
     p_smoke = sub.add_parser("smoke")
     p_eval = sub.add_parser("eval")
     p_eval.add_argument("--checkpoint", default=None)
+    p_cur = sub.add_parser("curriculum")
+    p_cur.add_argument("--rounds-per-stage", type=int, default=3)
     args = ap.parse_args()
 
     if args.cmd == "night":
@@ -486,6 +580,8 @@ def main():
         cmd_smoke(args)
     elif args.cmd == "eval":
         cmd_eval(args)
+    elif args.cmd == "curriculum":
+        cmd_curriculum(args)
 
 
 if __name__ == "__main__":
